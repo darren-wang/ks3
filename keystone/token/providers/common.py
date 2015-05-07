@@ -21,7 +21,7 @@ from six.moves.urllib import parse
 
 from keystone.common import controller as common_controller
 from keystone.common import dependency
-from keystone.contrib import federation
+#from keystone.contrib import federation
 from keystone import exception
 from keystone.i18n import _, _LE
 from keystone.openstack.common import versionutils
