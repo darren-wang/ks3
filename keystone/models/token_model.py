@@ -17,7 +17,6 @@ from oslo_config import cfg
 from oslo_utils import timeutils
 import six
 
-from keystone.contrib import federation
 from keystone import exception
 from keystone.i18n import _
 
@@ -292,37 +291,6 @@ class KeystoneToken(dict):
         if self.version is V3:
             return self.get('bind')
         return self.get('token', {}).get('bind')
-
-    @property
-    def is_federated_user(self):
-        try:
-            return self.version is V3 and federation.FEDERATION in self['user']
-        except KeyError:
-            raise exception.UnexpectedError()
-
-    @property
-    def federation_group_ids(self):
-        if self.is_federated_user:
-            if self.version is V3:
-                try:
-                    groups = self['user'][federation.FEDERATION].get(
-                        'groups', [])
-                    return [g['id'] for g in groups]
-                except KeyError:
-                    raise exception.UnexpectedError()
-        return []
-
-    @property
-    def federation_idp_id(self):
-        if self.version is not V3 or not self.is_federated_user:
-            return None
-        return self['user'][federation.FEDERATION]['identity_provider']['id']
-
-    @property
-    def federation_protocol_id(self):
-        if self.version is V3 and self.is_federated_user:
-            return self['user'][federation.FEDERATION]['protocol']['id']
-        return None
 
     @property
     def metadata(self):
