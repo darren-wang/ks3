@@ -1,5 +1,4 @@
 etc/keystone.conf
-etc/keystone/
 .venv
 keystone.egg-info/
 *.pyc
