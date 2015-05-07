@@ -26,7 +26,7 @@ from keystone.common import controller
 from keystone.common import dependency
 from keystone.common import wsgi
 from keystone import config
-from keystone.contrib import federation
+#from keystone.contrib import federation
 from keystone import exception
 from keystone.i18n import _, _LI, _LW
 from keystone.resource import controllers as resource_controllers
@@ -414,9 +414,9 @@ class Auth(controller.V3Controller):
             # scope is specified
             return
 
-        # Skip scoping when unscoped federated token is being issued
-        if federation.IDENTITY_PROVIDER in auth_context:
-            return
+#        # Skip scoping when unscoped federated token is being issued
+#       if federation.IDENTITY_PROVIDER in auth_context:
+#            return
 
         # Do not scope if request is for explicitly unscoped token
         if unscoped is not None:
