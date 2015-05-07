@@ -44,8 +44,8 @@ def calc_default_domain():
 
 
 @dependency.provider('resource_api')
-@dependency.requires('assignment_api', 'credential_api', 'domain_config_api',
-                     'identity_api', 'revoke_api')
+@dependency.requires('assignment_api', 'domain_config_api', 'identity_api',
+                     'revoke_api')
 class Manager(manager.Manager):
     """Default pivot point for the resource backend.
 
