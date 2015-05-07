@@ -71,8 +71,7 @@ def deprecated_to_resource_api(f):
 
 
 @dependency.provider('assignment_api')
-@dependency.requires('credential_api', 'identity_api', 'resource_api',
-                     'revoke_api', 'role_api')
+@dependency.requires('identity_api', 'resource_api', 'revoke_api', 'role_api')
 class Manager(manager.Manager):
     """Default pivot point for the Assignment backend.
 

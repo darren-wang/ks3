@@ -125,7 +125,7 @@ class AuthContext(dict):
 # available for consumers. Consumers should probably not be getting
 # identity_api from this since it's available in global registry, then
 # identity_api should be removed from this list.
-@dependency.requires('identity_api', 'resource_api', 'trust_api')
+@dependency.requires('identity_api', 'resource_api')
 class AuthInfo(object):
     """Encapsulation of "auth" request."""
 
@@ -345,7 +345,7 @@ class AuthInfo(object):
 
 
 @dependency.requires('assignment_api', 'catalog_api', 'identity_api',
-                     'resource_api', 'token_provider_api', 'trust_api')
+                     'resource_api', 'token_provider_api')
 class Auth(controller.V3Controller):
 
     # Note(atiwari): From V3 auth controller code we are
