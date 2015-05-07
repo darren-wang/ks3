@@ -310,9 +310,9 @@ class BaseProvider(provider.Provider):
                 return token.provider.V3
         raise exception.UnsupportedTokenVersionException()
 
-    def _is_mapped_token(self, auth_context):
-        return (federation.IDENTITY_PROVIDER in auth_context and
-                federation.PROTOCOL in auth_context)
+#    def _is_mapped_token(self, auth_context):
+#        return (federation.IDENTITY_PROVIDER in auth_context and
+#                federation.PROTOCOL in auth_context)
 
     def issue_v3_token(self, user_id, method_names, expires_at=None,
                        project_id=None, domain_id=None, auth_context=None,
@@ -350,40 +350,40 @@ class BaseProvider(provider.Provider):
         token_id = self._get_token_id(token_data)
         return token_id, token_data
 
-    def _handle_mapped_tokens(self, auth_context, project_id, domain_id):
-        def get_federated_domain():
-            return (CONF.federation.federated_domain_name or
-                    federation.FEDERATED_DOMAIN_KEYWORD)
-
-        federated_domain = get_federated_domain()
-        user_id = auth_context['user_id']
-        group_ids = auth_context['group_ids']
-        idp = auth_context[federation.IDENTITY_PROVIDER]
-        protocol = auth_context[federation.PROTOCOL]
-        token_data = {
-            'user': {
-                'id': user_id,
-                'name': parse.unquote(user_id),
-                federation.FEDERATION: {
-                    'identity_provider': {'id': idp},
-                    'protocol': {'id': protocol}
-                },
-                'domain': {
-                    'id': federated_domain,
-                    'name': federated_domain
-                }
-            }
-        }
-
-        if project_id or domain_id:
-            roles = self.v3_token_data_helper._populate_roles_for_groups(
-                group_ids, project_id, domain_id, user_id)
-            token_data.update({'roles': roles})
-        else:
-            token_data['user'][federation.FEDERATION].update({
-                'groups': [{'id': x} for x in group_ids]
-            })
-        return token_data
+#    def _handle_mapped_tokens(self, auth_context, project_id, domain_id):
+#        def get_federated_domain():
+#            return (CONF.federation.federated_domain_name or
+#                    federation.FEDERATED_DOMAIN_KEYWORD)
+#
+#        federated_domain = get_federated_domain()
+#        user_id = auth_context['user_id']
+#        group_ids = auth_context['group_ids']
+#        idp = auth_context[federation.IDENTITY_PROVIDER]
+#        protocol = auth_context[federation.PROTOCOL]
+#        token_data = {
+#            'user': {
+#                'id': user_id,
+#                'name': parse.unquote(user_id),
+#                federation.FEDERATION: {
+#                    'identity_provider': {'id': idp},
+#                    'protocol': {'id': protocol}
+#                },
+#                'domain': {
+#                    'id': federated_domain,
+#                    'name': federated_domain
+#                }
+#            }
+#        }
+#
+#        if project_id or domain_id:
+#            roles = self.v3_token_data_helper._populate_roles_for_groups(
+#                group_ids, project_id, domain_id, user_id)
+#            token_data.update({'roles': roles})
+#        else:
+#            token_data['user'][federation.FEDERATION].update({
+#                'groups': [{'id': x} for x in group_ids]
+#            })
+#        return token_data
 
     def _verify_token_ref(self, token_ref):
         """Verify and return the given token_ref."""
@@ -391,15 +391,15 @@ class BaseProvider(provider.Provider):
             raise exception.Unauthorized()
         return token_ref
 
-    def _assert_is_not_federation_token(self, token_ref):
-        """Make sure we aren't using v2 auth on a federation token."""
-        token_data = token_ref.get('token_data')
-        if (token_data and self.get_token_version(token_data) ==
-                token.provider.V3):
-            if 'OS-FEDERATION' in token_data['token']['user']:
-                msg = _('Attempting to use OS-FEDERATION token with V2 '
-                        'Identity Service, use V3 Authentication')
-                raise exception.Unauthorized(msg)
+#    def _assert_is_not_federation_token(self, token_ref):
+#        """Make sure we aren't using v2 auth on a federation token."""
+#        token_data = token_ref.get('token_data')
+#        if (token_data and self.get_token_version(token_data) ==
+#                token.provider.V3):
+#            if 'OS-FEDERATION' in token_data['token']['user']:
+#                msg = _('Attempting to use OS-FEDERATION token with V2 '
+#                        'Identity Service, use V3 Authentication')
+#                raise exception.Unauthorized(msg)
 
     def _assert_default_domain(self, token_ref):
         """Make sure we are operating on default domain only."""
