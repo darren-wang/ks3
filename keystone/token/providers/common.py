@@ -33,8 +33,8 @@ LOG = log.getLogger(__name__)
 CONF = cfg.CONF
 
 
-@dependency.requires('assignment_api', 'catalog_api', 'federation_api',
-                     'identity_api', 'resource_api', 'role_api', 'trust_api')
+@dependency.requires('assignment_api', 'catalog_api', 'identity_api',
+                    'resource_api', 'role_api', 'trust_api')
 class V3TokenDataHelper(object):
     """Token data helper."""
     def __init__(self):
