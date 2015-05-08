@@ -39,17 +39,6 @@ def upgrade(migrate_engine):
             'ALTER DATABASE %s DEFAULT CHARACTER SET utf8' %
             migrate_engine.url.database)
 
-    credential = sql.Table(
-        'credential', meta,
-        sql.Column('id', sql.String(length=64), primary_key=True),
-        sql.Column('user_id', sql.String(length=64), nullable=False),
-        sql.Column('project_id', sql.String(length=64)),
-        sql.Column('blob', ks_sql.JsonBlob, nullable=False),
-        sql.Column('type', sql.String(length=255), nullable=False),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
     domain = sql.Table(
         'domain', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
@@ -108,6 +97,8 @@ def upgrade(migrate_engine):
         sql.Column('id', sql.String(length=64), primary_key=True),
         sql.Column('name', sql.String(length=255), nullable=False),
         sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column('description', sql.Text),
+        sql.Column('domain_id', sql.String(length=64), nullable=False),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
@@ -129,29 +120,6 @@ def upgrade(migrate_engine):
         sql.Column('valid', sql.Boolean, default=True, nullable=False),
         sql.Column('trust_id', sql.String(length=64)),
         sql.Column('user_id', sql.String(length=64)),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
-    trust = sql.Table(
-        'trust', meta,
-        sql.Column('id', sql.String(length=64), primary_key=True),
-        sql.Column('trustor_user_id', sql.String(length=64), nullable=False),
-        sql.Column('trustee_user_id', sql.String(length=64), nullable=False),
-        sql.Column('project_id', sql.String(length=64)),
-        sql.Column('impersonation', sql.Boolean, nullable=False),
-        sql.Column('deleted_at', sql.DateTime),
-        sql.Column('expires_at', sql.DateTime),
-        sql.Column('remaining_uses', sql.Integer, nullable=True),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
-    trust_role = sql.Table(
-        'trust_role', meta,
-        sql.Column('trust_id', sql.String(length=64), primary_key=True,
-                   nullable=False),
-        sql.Column('role_id', sql.String(length=64), primary_key=True,
-                   nullable=False),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
@@ -203,10 +171,10 @@ def upgrade(migrate_engine):
         mysql_charset='utf8')
 
     # create all tables
-    tables = [credential, domain, endpoint, group,
-              policy, project, role, service,
-              token, trust, trust_role, user,
-              user_group_membership, region, assignment]
+    tables = [region, service, endpoint, 
+              domain, project, role, assignment,
+              group, user, user_group_membership,
+              policy, token ]
 
     for table in tables:
         try:
@@ -223,7 +191,8 @@ def upgrade(migrate_engine):
                              group.c.name,
                              name='ixu_group_name_domain_id').create()
     migrate.UniqueConstraint(role.c.name,
-                             name='ixu_role_name').create()
+                             role.c.domain_id,
+                             name='ixu_role_name_domain_id').create()
     migrate.UniqueConstraint(project.c.domain_id,
                              project.c.name,
                              name='ixu_project_name_domain_id').create()
@@ -260,7 +229,11 @@ def upgrade(migrate_engine):
          'name': 'fk_project_domain_id'},
 
         {'columns': [assignment.c.role_id],
-         'references': [role.c.id]}
+         'references': [role.c.id]},
+        
+        {'columns': [role.c.domain_id],
+         'references': [domain.c.id],
+         'name': 'fk_role_domain_id'}
     ]
 
     for fkey in fkeys:

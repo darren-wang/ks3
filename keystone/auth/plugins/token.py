@@ -17,7 +17,6 @@ from oslo_log import log
 import six
 
 from keystone import auth
-from keystone.auth.plugins import mapped
 from keystone.common import dependency
 from keystone.common import wsgi
 from keystone import exception
@@ -46,14 +45,7 @@ class Token(auth.AuthMethodHandler):
             raise exception.ValidationError(attribute='id',
                                             target=self.method)
         token_ref = self._get_token_ref(auth_payload)
-        if token_ref.is_federated_user and self.federation_api:
-            mapped.handle_scoped_token(
-                context, auth_payload, user_context, token_ref,
-                self.federation_api, self.identity_api,
-                self.token_provider_api)
-        else:
-            token_authenticate(context, auth_payload, user_context, token_ref)
-
+        token_authenticate(context, auth_payload, user_context, token_ref)
 
 def token_authenticate(context, auth_payload, user_context, token_ref):
     try:
