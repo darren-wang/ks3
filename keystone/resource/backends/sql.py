@@ -78,7 +78,7 @@ class Resource(keystone_resource.Driver):
 
     def list_projects_in_domain(self, domain_id):
         with sql.transaction() as session:
-            self._get_domain(session, domain_id)
+            self._get_domain(session, domain_id)# make sure target domain is valid
             query = session.query(Project)
             project_refs = query.filter_by(domain_id=domain_id)
             return [project_ref.to_dict() for project_ref in project_refs]

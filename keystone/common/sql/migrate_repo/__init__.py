@@ -13,5 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+# Starting from ver 15 are created by Darren Wang
 
 DB_INIT_VERSION = 0

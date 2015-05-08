@@ -20,6 +20,7 @@ from oslo_config import cfg
 import six
 
 from keystone.common import dependency
+from keystone.common import driver_hints
 from keystone.common import manager
 from keystone import exception
 from keystone import notifications
@@ -29,6 +30,7 @@ CONF = cfg.CONF
 
 
 @dependency.provider('policy_api')
+@dependency.requires('resource_api')
 class Manager(manager.Manager):
     """Default pivot point for the Policy backend.
 
@@ -64,10 +66,7 @@ class Manager(manager.Manager):
 
     @manager.response_truncated
     def list_policies(self, hints=None):
-        # NOTE(henry-nash): Since the advantage of filtering or list limiting
-        # of policies at the driver level is minimal, we leave this to the
-        # caller.
-        return self.driver.list_policies()
+        return self.driver.list_policies(hints or driver_hints.Hints())
 
     def delete_policy(self, policy_id, initiator=None):
         try:
@@ -77,6 +76,22 @@ class Manager(manager.Manager):
         notifications.Audit.deleted(self._POLICY, policy_id, initiator)
         return ret
 
+    def list_policies_ids_from_domain_ids(self, domain_ids):
+        # (darren) Validate the existence of domains before calling the
+        # driver.
+        for domain_id in domain_ids:
+            try:
+                self.resource_api.get_domain(domain_id)
+            except exception.DomainNotFound:
+                raise
+        self.driver.list_policies_ids_from_domain_ids(domain_ids)
+
+    def list_policies_in_domain(self, domain_id):
+        try:
+            self.resource_api.get_domain(domain_id)
+        except exception.DomainNotFound:
+            raise
+        self.driver.list_policies_in_domain(domain_id)
 
 @six.add_metaclass(abc.ABCMeta)
 class Driver(object):

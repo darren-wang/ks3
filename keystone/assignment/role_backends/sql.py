@@ -13,7 +13,6 @@
 from keystone import assignment
 from keystone.common import sql
 from keystone import exception
-from keystone.resource.backends.sql import Domain
 
 
 class Role(assignment.RoleDriver):
@@ -43,16 +42,9 @@ class Role(assignment.RoleDriver):
     
     def list_roles_in_domain(self, domain_id):
         with sql.transaction() as session:
-            self._get_domain(session, domain_id)
             query = session.query(RoleTable)
             role_refs = query.filter_by(domain_id=domain_id)
             return [role_ref.to_dict() for role_ref in role_refs]
-
-    def _get_domain(self, session, domain_id):
-        ref = session.query(Domain).get(domain_id)
-        if ref is None:
-            raise exception.DomainNotFound(domain_id=domain_id)
-        return ref
 
     def list_role_ids_from_domain_ids(self, domain_ids):
         if not domain_ids:

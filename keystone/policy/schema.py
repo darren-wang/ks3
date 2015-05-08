@@ -10,21 +10,31 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from keystone.common import validation
+from keystone.common.validation import parameter_types
 
 _policy_properties = {
+    'name': {
+        'type': 'string',
+        'minLength': 1,
+        'maxLength': 64
+    },
     'blob': {
         'type': 'string'
     },
     'type': {
         'type': 'string',
         'maxLength': 255
-    }
+    },
+    'description': validation.nullable(parameter_types.description),
+    'domain_id': parameter_types.id_string,
+    'enabled': parameter_types.boolean,
 }
 
 policy_create = {
     'type': 'object',
     'properties': _policy_properties,
-    'required': ['blob', 'type'],
+    'required': ['blob', 'type', 'domain_id', 'name'],
     'additionalProperties': True
 }
 
