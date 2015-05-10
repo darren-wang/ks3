@@ -35,19 +35,19 @@ class Resource(keystone_resource.Driver):
             raise exception.ProjectNotFound(project_id=project_id)
         return project_ref
 
-    def get_project(self, tenant_id):
+    def get_project(self, project_id):
         with sql.transaction() as session:
-            return self._get_project(session, tenant_id).to_dict()
+            return self._get_project(session, project_id).to_dict()
 
-    def get_project_by_name(self, tenant_name, domain_id):
+    def get_project_by_name(self, project_name, domain_id):
         with sql.transaction() as session:
             query = session.query(Project)
-            query = query.filter_by(name=tenant_name)
+            query = query.filter_by(name=project_name)
             query = query.filter_by(domain_id=domain_id)
             try:
                 project_ref = query.one()
             except sql.NotFound:
-                raise exception.ProjectNotFound(project_id=tenant_name)
+                raise exception.ProjectNotFound(project_id=project_name)
             return project_ref.to_dict()
 
     @sql.truncated

@@ -36,7 +36,7 @@ MEMOIZE = cache.get_memoization_decorator(section='resource')
 
 def calc_default_domain():
     return {'description':
-            (u'Owns users and tenants (i.e. projects)'
+            (u'Owns users and projects (i.e. projects)'
                 ' available on Identity API v2.'),
             'enabled': True,
             'id': CONF.identity.default_domain_id,
@@ -79,19 +79,19 @@ class Manager(manager.Manager):
                 action=_('max hierarchy depth reached for '
                          '%s branch.') % project_id)
 
-    def create_project(self, tenant_id, tenant, initiator=None):
-        tenant = tenant.copy()
-        tenant.setdefault('enabled', True)
-        tenant['enabled'] = clean.project_enabled(tenant['enabled'])
-        tenant.setdefault('description', '')
-        tenant.setdefault('parent_id', None)
+    def create_project(self, project_id, project, initiator=None):
+        project = project.copy()
+        project.setdefault('enabled', True)
+        project['enabled'] = clean.project_enabled(project['enabled'])
+        project.setdefault('description', '')
+        project.setdefault('parent_id', None)
 
-        if tenant.get('parent_id') is not None:
-            parent_ref = self.get_project(tenant.get('parent_id'))
+        if project.get('parent_id') is not None:
+            parent_ref = self.get_project(project.get('parent_id'))
             parents_list = self.list_project_parents(parent_ref['id'])
             parents_list.append(parent_ref)
             for ref in parents_list:
-                if ref.get('domain_id') != tenant.get('domain_id'):
+                if ref.get('domain_id') != project.get('domain_id'):
                     raise exception.ForbiddenAction(
                         action=_('cannot create a project within a different '
                                  'domain than its parents.'))
@@ -100,13 +100,13 @@ class Manager(manager.Manager):
                         action=_('cannot create a project in a '
                                  'branch containing a disabled '
                                  'project: %s') % ref['id'])
-            self._assert_max_hierarchy_depth(tenant.get('parent_id'),
+            self._assert_max_hierarchy_depth(project.get('parent_id'),
                                              parents_list)
 
-        ret = self.driver.create_project(tenant_id, tenant)
-        notifications.Audit.created(self._PROJECT, tenant_id, initiator)
+        ret = self.driver.create_project(project_id, project)
+        notifications.Audit.created(self._PROJECT, project_id, initiator)
         if MEMOIZE.should_cache(ret):
-            self.get_project.set(ret, self, tenant_id)
+            self.get_project.set(ret, self, project_id)
             self.get_project_by_name.set(ret, self, ret['name'],
                                          ret['domain_id'])
         return ret
@@ -184,56 +184,56 @@ class Manager(manager.Manager):
                              'its subtree contains enabled '
                              'projects') % project_id)
 
-    def update_project(self, tenant_id, tenant, initiator=None):
-        original_tenant = self.driver.get_project(tenant_id)
-        tenant = tenant.copy()
+    def update_project(self, project_id, project, initiator=None):
+        original_project = self.driver.get_project(project_id)
+        project = project.copy()
 
-        parent_id = original_tenant.get('parent_id')
-        if 'parent_id' in tenant and tenant.get('parent_id') != parent_id:
+        parent_id = original_project.get('parent_id')
+        if 'parent_id' in project and project.get('parent_id') != parent_id:
             raise exception.ForbiddenAction(
                 action=_('Update of `parent_id` is not allowed.'))
 
-        if 'enabled' in tenant:
-            tenant['enabled'] = clean.project_enabled(tenant['enabled'])
+        if 'enabled' in project:
+            project['enabled'] = clean.project_enabled(project['enabled'])
 
         # NOTE(rodrigods): for the current implementation we only allow to
         # disable a project if all projects below it in the hierarchy are
         # already disabled. This also means that we can not enable a
         # project that has disabled parents.
-        original_tenant_enabled = original_tenant.get('enabled', True)
-        tenant_enabled = tenant.get('enabled', True)
-        if not original_tenant_enabled and tenant_enabled:
-            self._assert_all_parents_are_enabled(tenant_id)
-        if original_tenant_enabled and not tenant_enabled:
-            self._assert_whole_subtree_is_disabled(tenant_id)
-            self._disable_project(tenant_id)
+        original_project_enabled = original_project.get('enabled', True)
+        project_enabled = project.get('enabled', True)
+        if not original_project_enabled and project_enabled:
+            self._assert_all_parents_are_enabled(project_id)
+        if original_project_enabled and not project_enabled:
+            self._assert_whole_subtree_is_disabled(project_id)
+            self._disable_project(project_id)
 
-        ret = self.driver.update_project(tenant_id, tenant)
-        notifications.Audit.updated(self._PROJECT, tenant_id, initiator)
-        self.get_project.invalidate(self, tenant_id)
-        self.get_project_by_name.invalidate(self, original_tenant['name'],
-                                            original_tenant['domain_id'])
+        ret = self.driver.update_project(project_id, project)
+        notifications.Audit.updated(self._PROJECT, project_id, initiator)
+        self.get_project.invalidate(self, project_id)
+        self.get_project_by_name.invalidate(self, original_project['name'],
+                                            original_project['domain_id'])
         return ret
 
-    def delete_project(self, tenant_id, initiator=None):
-        if not self.driver.is_leaf_project(tenant_id):
+    def delete_project(self, project_id, initiator=None):
+        if not self.driver.is_leaf_project(project_id):
             raise exception.ForbiddenAction(
                 action=_('cannot delete the project %s since it is not '
-                         'a leaf in the hierarchy.') % tenant_id)
+                         'a leaf in the hierarchy.') % project_id)
 
-        project = self.driver.get_project(tenant_id)
+        project = self.driver.get_project(project_id)
         project_user_ids = (
-            self.assignment_api.list_user_ids_for_project(tenant_id))
+            self.assignment_api.list_user_ids_for_project(project_id))
         for user_id in project_user_ids:
-            payload = {'user_id': user_id, 'project_id': tenant_id}
+            payload = {'user_id': user_id, 'project_id': project_id}
             self._emit_invalidate_user_project_tokens_notification(payload)
-        ret = self.driver.delete_project(tenant_id)
-        self.assignment_api.delete_project_assignments(tenant_id)
-        self.get_project.invalidate(self, tenant_id)
+        ret = self.driver.delete_project(project_id)
+        self.assignment_api.delete_project_assignments(project_id)
+        self.get_project.invalidate(self, project_id)
         self.get_project_by_name.invalidate(self, project['name'],
                                             project['domain_id'])
-        self.credential_api.delete_credentials_for_project(tenant_id)
-        notifications.Audit.deleted(self._PROJECT, tenant_id, initiator)
+        self.credential_api.delete_credentials_for_project(project_id)
+        notifications.Audit.deleted(self._PROJECT, project_id, initiator)
         return ret
 
     def _filter_projects_list(self, projects_list, user_id):
@@ -504,6 +504,10 @@ class Manager(manager.Manager):
     # and not exposed via the API.  Therefore there is no need to support
     # driver hints for it.
     def list_projects_in_domain(self, domain_id):
+        try:
+            self.get_domain(domain_id)
+        except exception.DomainNotFound:
+            raise
         return self.driver.list_projects_in_domain(domain_id)
 
     @MEMOIZE
@@ -530,10 +534,10 @@ class Driver(object):
         return CONF.resource.list_limit or CONF.list_limit
 
     @abc.abstractmethod
-    def get_project_by_name(self, tenant_name, domain_id):
-        """Get a tenant by name.
+    def get_project_by_name(self, project_name, domain_id):
+        """Get a project by name.
 
-        :returns: tenant_ref
+        :returns: project_ref
         :raises: keystone.exception.ProjectNotFound
 
         """
