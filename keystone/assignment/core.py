@@ -835,7 +835,7 @@ class Driver(object):
 
 
 @dependency.provider('role_api')
-@dependency.requires('assignment_api')
+@dependency.requires('assignment_api', 'resource_api')
 class RoleManager(manager.Manager):
     """Default pivot point for the Role backend."""
 
@@ -868,6 +868,10 @@ class RoleManager(manager.Manager):
         return self.driver.list_roles(hints or driver_hints.Hints())
     
     def list_roles_in_domain(self, domain_id):
+        try:
+            self.resource_api.get_domain(domain_id)
+        except exception.DomainNotFound:
+            raise
         return self.driver.list_roles_in_domain(domain_id)
     
     def update_role(self, role_id, role, initiator=None):
