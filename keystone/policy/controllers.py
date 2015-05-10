@@ -32,7 +32,7 @@ class PolicyV3(controller.V3Controller):
         ref = self.policy_api.create_policy(ref['id'], ref, initiator)
         return PolicyV3.wrap_member(context, ref)
 
-    @controller.filterprotected('type', 'domain_id', 'name')
+    @controller.filterprotected('type', 'domain_id', 'name', 'enabled')
     def list_policies(self, context, filters):
         hints = PolicyV3.build_driver_hints(context, filters)
         refs = self.policy_api.list_policies(hints=hints)
