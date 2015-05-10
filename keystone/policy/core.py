@@ -109,6 +109,18 @@ class Driver(object):
         raise exception.NotImplemented()  # pragma: no cover
 
     @abc.abstractmethod
+    def isol_enforce(self, context, credentials, action, target):
+        """This method is added to provide system-level domain 
+        isolation, according to the isolation policy defined in 
+        iso_dict. Thus we can separate access control into domain
+        isolation and RBAC independently. Domina isolation is both
+        defined and forced by system and RBAC is defined by domain, 
+        but enforced by system.
+        (Darren)
+        """
+        raise exception.NotImplemented()
+
+    @abc.abstractmethod
     def create_policy(self, policy_id, policy):
         """Store a policy blob.
 

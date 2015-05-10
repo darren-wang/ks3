@@ -21,24 +21,31 @@ from oslo_policy import policy as common_policy
 
 from keystone import exception
 from keystone import policy
-
+from keystone.common import isolation
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
 _ENFORCER = None
+_ISOLATION_ENFORCER = None
 
 
 def reset():
     global _ENFORCER
+    global _ISOLATION_ENFORCER
     _ENFORCER = None
+    _ISOLATION_ENFORCER = None
 
 
 def init():
     global _ENFORCER
+    global _ISOLATION_ENFORCER
     if not _ENFORCER:
         _ENFORCER = common_policy.Enforcer(CONF)
+    if not _ISOLATION_ENFORCER:
+        _ISOLATION_ENFORCER = common_policy.Enforcer(rules=
+                                                     isolation.isol_dict)
 
 
 def enforce(credentials, action, target, do_raise=True):
@@ -68,13 +75,27 @@ def enforce(credentials, action, target, do_raise=True):
 
     return _ENFORCER.enforce(action, target, credentials, **extra)
 
+def isol_enforce(credentials, action, target, do_raise=True):
+    init()
+    extra = {}
+    if do_raise:
+        extra.update(exc=exception.ForbiddenAction, action=action,
+                     do_raise=do_raise)
+    return _ISOLATION_ENFORCER.enforce(action, target, credntials, **extra)
 
 class Policy(policy.Driver):
+
     def enforce(self, credentials, action, target):
         LOG.debug('enforce %(action)s: %(credentials)s', {
             'action': action,
             'credentials': credentials})
         enforce(credentials, action, target)
+
+    def isol_enforce(self, credentials, action, target):
+        Log.debug('\nenforce domain isolation, %(action)s: %(credentials)s\n', {
+            'action': action,
+            'credentials': credentials})
+        isol_enforce(credentials, action, target)
 
     def create_policy(self, policy_id, policy):
         raise exception.NotImplemented()
