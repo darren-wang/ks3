@@ -23,8 +23,8 @@ isol_rules = {
     "matching_domain_id": "domain_id:%(domain_id)s",
 # domain
     "matching_target_domain_id": "domain_id:%(target.domain.id)s",
-    "identity:get_domain": "rule:matching_target_domain_id",
-    "identity:update_domain": "rule:matching_target_domain_id",
+    "identity:get_domain": "domain_id:%(target.domain.id)s",
+    "identity:update_domain": "domain_id:%(target.domain.id)s",
 # project
     "matching_target_project_domain_id": "domain_id:%(target.project.domain_id)s",
     "matching_project_domain_id": "domain_id:%(project.domain_id)s",
