@@ -24,9 +24,9 @@ isol_rules = {
     "identity:get_domain": "domain_id:%(target.domain.id)s",
     "identity:update_domain": "domain_id:%(target.domain.id)s",
 # project
-    "identity:get_project": "domain_id:%(target.project.domain_id)s",
+    "identity:get_project": "domain_id:%(target.project.domain_id)s or project_id:%(target.project.id)s",
     "identity:list_projects": "domain_id:%(domain_id)s",
-    "identity:list_user_projects": "user_id:%(user_id)s or user_id:%(target.token.user_id)s or domain_id:%(domain_id)s",
+    "identity:list_user_projects": "user_id:%(user_id)s or domain_id:%(domain_id)s",
     "identity:create_project": "domain_id:%(project.domain_id)s",
     "identity:update_project": "domain_id:%(target.project.domain_id)s",
     "identity:delete_project": "domain_id:%(target.project.domain_id)s",
