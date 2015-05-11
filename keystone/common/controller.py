@@ -17,6 +17,7 @@ import uuid
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_policy import policy
 import six
 
 from keystone.common import authorization
@@ -24,6 +25,7 @@ from keystone.common import dependency
 from keystone.common import driver_hints
 from keystone.common import utils
 from keystone.common import wsgi
+from keystone.common import isolation
 from keystone import exception
 from keystone.i18n import _, _LW
 from keystone.models import token_model
@@ -133,7 +135,19 @@ def protected(callback=None):
                 # Add in the kwargs, which means that any entity provided as a
                 # parameter for calls like create and update will be included.
                 policy_dict.update(kwargs)
-                self.policy_api.enforce(creds,
+                # (Darren) System hard-coded isolation check 
+                self.policy_api.enforce(creds, isolation.isol_rules[action],
+                                        utils.flatten_dict(policy_dict))
+                if user.domain is not admin_domain: # pseudo-code
+                    domain_rules = self.policy_api.list_policies_in_domain(
+                                                            user.domain_id)
+                    rule_dict = domain_rules[0].blob # json or dict?
+                    rule_dict = policy.Rules.from_dict(rule_dict)
+                    self.policy_api.enforce(creds, action,
+                                        utils.flatten_dict(policy_dict),
+                                        rule_dict=rule_dict)
+                else:    
+                    self.policy_api.enforce(creds,
                                         action,
                                         utils.flatten_dict(policy_dict))
                 LOG.debug('RBAC: Authorization granted')
