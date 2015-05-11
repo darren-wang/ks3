@@ -19,23 +19,22 @@ isol_rules = {
     # of RBAC enforcer.
     "default": "@",  
     "admin_domain": "domain_id:" + CONF.identity.default_domain_id, # what if this value changes?
-    "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
 # domain
     "identity:get_domain": "domain_id:%(target.domain.id)s",
     "identity:update_domain": "domain_id:%(target.domain.id)s",
 # project
-    "identity:get_project": "domain_id:%(target.project.domain_id)s or project_id:%(target.project.id)s",
     "identity:list_projects": "domain_id:%(domain_id)s",
     "identity:list_user_projects": "user_id:%(user_id)s or domain_id:%(domain_id)s",
     "identity:create_project": "domain_id:%(project.domain_id)s",
-    "identity:update_project": "domain_id:%(target.project.domain_id)s",
+    "identity:get_project": "domain_id:%(target.project.domain_id)s or project_id:%(target.project.id)s",
+    "identity:update_project": "domain_id:%(target.project.domain_id)s or project_id:%(target.project.id)s",
     "identity:delete_project": "domain_id:%(target.project.domain_id)s",
-# user
-    "identity:get_user": "user_id:%(user_id)s or user_id:%(target.token.user_id)s or domain_id:%(target.user.domain_id)s",
+# user    
     "identity:list_users": "domain_id:%(domain_id)s",
-    "identity:create_user": "domain_id:%(user.domain_id)s",
-    "identity:update_user": "user_id:%(user_id)s or user_id:%(target.token.user_id)s or domain_id:%(target.user.domain_id)s",
-    "identity:delete_user": "domain_id:%(target.user.domain_id)s",
+    "identity:create_user": "domain_id:%(user.domain_id)s or project_id:%(user.default_project_id)s",
+    "identity:get_user": "user_id:%(user_id)s or user_id:%(target.user.id)s or domain_id:%(target.user.domain_id)s",
+    "identity:update_user": "user_id:%(user_id)s or user_id:%(target.user.id)s or domain_id:%(target.user.domain_id)s or project_id:%(target.user.default_project_id)s",
+    "identity:delete_user": "domain_id:%(target.user.domain_id)s or project_id:%(target.user.default_project_id)s",
 # group
     "identity:get_group": "domain_id:%(target.group.domain_id)s",
     "identity:list_groups": "domain_id:%(domain_id)s",
@@ -43,10 +42,12 @@ isol_rules = {
     "identity:create_group": "domain_id:%(group.domain_id)s",
     "identity:update_group": "domain_id:%(target.group.domain_id)s",
     "identity:delete_group": "domain_id:%(target.group.domain_id)s",
-    "identity:list_users_in_group": "domain_id:%(target.group.domain_id)s",
     "identity:remove_user_from_group": "domain_id:%(target.group.domain_id)s",
     "identity:check_user_in_group": "domain_id:%(target.group.domain_id)s",
     "identity:add_user_to_group": "domain_id:%(target.group.domain_id)s",
+    "identity:list_users_in_group": "domain_id:%(target.group.domain_id)s",
+    "identity:list_projects_for_groups": "",
+    "identity:list_domains_for_groups": "",
 # role
     "identity:get_role": "domain_id:%(target.role.domain_id)s",
     "identity:list_roles": "domain_id:%(domain_id)s",
@@ -72,10 +73,7 @@ isol_rules = {
     "identity:create_domain_config": "domain_id:%(domain_config.domain_id)s",
     "identity:get_domain_config": "domain_id:%(target.domain_config.domain_id)s",
     "identity:update_domain_config": "domain_id:%(target.domain_config.domain_id)s",
-    "identity:delete_domain_config": "domain_id:%(target.domain_config.domain_id)s",
-# un-triaged
-    "identity:list_projects_for_groups": "",
-    "identity:list_domains_for_groups": "",
+    "identity:delete_domain_config": "domain_id:%(target.domain_config.domain_id)s"
 }
 
 
