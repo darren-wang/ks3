@@ -21,7 +21,7 @@ from oslo_policy import policy as common_policy
 
 from keystone import exception
 from keystone import policy
-
+from keystone.common import isolation
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
@@ -41,16 +41,20 @@ def init():
         _ENFORCER = common_policy.Enforcer(CONF)
 
 
-def enforce(credentials, action, target, do_raise=True):
+def enforce(credentials, action, target, rule_dict=None, do_raise=True):
     """Verifies that the action is valid on the target in this context.
 
        :param credentials: user credentials
        :param action: string representing the action to be checked, which
                       should be colon separated for clarity.
+                      Or it can be a Check instance.
        :param target: dictionary representing the object of the action
                       for object creation this should be a dictionary
                       representing the location of the object e.g.
                       {'project_id': object.project_id}
+       :param rule_dict: instance of oslo_policy.policy.Rules, it's 
+                         actually a dict, with keys are the actions
+                         to be protected and values are parsed Check trees.
        :raises: `exception.Forbidden` if verification fails.
 
        Actions should be colon separated for clarity. For example:
@@ -70,11 +74,14 @@ def enforce(credentials, action, target, do_raise=True):
 
 
 class Policy(policy.Driver):
-    def enforce(self, credentials, action, target):
-        LOG.debug('enforce %(action)s: %(credentials)s', {
+
+    def enforce(self, credentials, action, target, rule_dict=None):
+        LOG.debug('API protection:\n%(credentials)s \nacts\n'
+        '%(action)s\non\n%(target)s', {
             'action': action,
-            'credentials': credentials})
-        enforce(credentials, action, target)
+            'credentials': credentials,
+            'target':target})
+        enforce(credentials, action, target, rule_dict=rule_dict)
 
     def create_policy(self, policy_id, policy):
         raise exception.NotImplemented()

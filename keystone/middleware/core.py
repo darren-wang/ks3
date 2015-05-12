@@ -184,13 +184,13 @@ class AuthContextMiddleware(wsgi.Middleware):
         context['environment'] = request.environ
 
         try:
-            token_ref = token_model.KeystoneToken(
+            ks_token = token_model.KeystoneToken(
                 token_id=token_id,
                 token_data=self.token_provider_api.validate_token(token_id))
             # TODO(gyee): validate_token_bind should really be its own
             # middleware
-            wsgi.validate_token_bind(context, token_ref)
-            return authorization.token_to_auth_context(token_ref)
+            wsgi.validate_token_bind(context, ks_token)
+            return authorization.token_to_auth_context(ks_token)
         except exception.TokenNotFound:
             LOG.warning(_LW('RBAC: Invalid token'))
             raise exception.Unauthorized()

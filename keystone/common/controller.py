@@ -17,6 +17,8 @@ import uuid
 
 from oslo_config import cfg
 from oslo_log import log
+from oslo_policy import policy
+from oslo_serialization import jsonutils
 import six
 
 from keystone.common import authorization
@@ -24,6 +26,7 @@ from keystone.common import dependency
 from keystone.common import driver_hints
 from keystone.common import utils
 from keystone.common import wsgi
+from keystone.common import isolation
 from keystone import exception
 from keystone.i18n import _, _LW
 from keystone.models import token_model
@@ -109,16 +112,16 @@ def protected(callback=None):
                 # TODO(henry-nash): Move this entire code to a member
                 # method inside v3 Auth
                 if context.get('subject_token_id') is not None:
-                    token_ref = token_model.KeystoneToken(
+                    ks_token = token_model.KeystoneToken(
                         token_id=context['subject_token_id'],
                         token_data=self.token_provider_api.validate_token(
                             context['subject_token_id']))
                     policy_dict.setdefault('target', {})
                     policy_dict['target'].setdefault(self.member_name, {})
                     policy_dict['target'][self.member_name]['user_id'] = (
-                        token_ref.user_id)
+                        ks_token.user_id)
                     try:
-                        user_domain_id = token_ref.user_domain_id
+                        user_domain_id = ks_token.user_domain_id
                     except exception.UnexpectedError:
                         user_domain_id = None
                     if user_domain_id:
@@ -127,15 +130,28 @@ def protected(callback=None):
                         policy_dict['target'][self.member_name][
                             'user'].setdefault('domain', {})
                         policy_dict['target'][self.member_name]['user'][
-                            'domain']['id'] = (
-                                user_domain_id)
+                            'domain']['id'] = (user_domain_id)
 
                 # Add in the kwargs, which means that any entity provided as a
                 # parameter for calls like create and update will be included.
                 policy_dict.update(kwargs)
-                self.policy_api.enforce(creds,
+                # (Darren) System hard-coded isolation check 
+                self.policy_api.enforce(creds, isolation.isol_rules[action],
+                                        utils.flatten_dict(policy_dict))
+                user_domain_id = creds['scope_domain_id']
+                if user_domain_id == CONF.identity.default_domain_id:
+                    self.policy_api.enforce(creds,
                                         action,
                                         utils.flatten_dict(policy_dict))
+                else:    
+                    domain_rules = self.policy_api.list_policies_in_domain(
+                                                            user_domain_id)
+                    # Assume policy are written in JSON
+                    rule_dict = jsonutils.loads(domain_rules[0].blob)
+                    rule_dict = policy.Rules.from_dict(rule_dict)
+                    self.policy_api.enforce(creds, action,
+                                        utils.flatten_dict(policy_dict),
+                                        rule_dict=rule_dict)
                 LOG.debug('RBAC: Authorization granted')
             return f(self, context, *args, **kwargs)
         return inner
@@ -174,9 +190,22 @@ def filterprotected(*filters):
                 for key in kwargs:
                     target[key] = kwargs[key]
 
-                self.policy_api.enforce(creds,
+                self.policy_api.enforce(creds, isolation.isol_rules[action],
+                                        utils.flatten_dict(policy_dict))
+                user_domain_id = creds['scope_domain_id']
+                if user_domain_id == CONF.identity.default_domain_id:
+                    self.policy_api.enforce(creds,
                                         action,
-                                        utils.flatten_dict(target))
+                                        utils.flatten_dict(policy_dict))
+                else:    
+                    domain_rules = self.policy_api.list_policies_in_domain(
+                                                            user_domain_id)
+                    # Assume policy are written in JSON
+                    rule_dict = jsonutils.loads(domain_rules[0].blob)
+                    rule_dict = policy.Rules.from_dict(rule_dict)
+                    self.policy_api.enforce(creds, action,
+                                        utils.flatten_dict(policy_dict),
+                                        rule_dict=rule_dict)
 
                 LOG.debug('RBAC: Authorization granted')
             else:
