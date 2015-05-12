@@ -18,6 +18,7 @@ import uuid
 from oslo_config import cfg
 from oslo_log import log
 from oslo_policy import policy
+from oslo_serialization import jsonutils
 import six
 
 from keystone.common import authorization
@@ -138,18 +139,20 @@ def protected(callback=None):
                 # (Darren) System hard-coded isolation check 
                 self.policy_api.enforce(creds, isolation.isol_rules[action],
                                         utils.flatten_dict(policy_dict))
-                if user.domain is not admin_domain: # pseudo-code
+                user_domain_id = creds['scope_domain_id']
+                if user_domain_id == CONF.identity.default_domain_id:
+                    self.policy_api.enforce(creds,
+                                        action,
+                                        utils.flatten_dict(policy_dict))
+                else:    
                     domain_rules = self.policy_api.list_policies_in_domain(
-                                                            user.domain_id)
-                    rule_dict = domain_rules[0].blob # json or dict?
+                                                            user_domain_id)
+                    # Assume policy are written in JSON
+                    rule_dict = jsonutils.loads(domain_rules[0].blob)
                     rule_dict = policy.Rules.from_dict(rule_dict)
                     self.policy_api.enforce(creds, action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=rule_dict)
-                else:    
-                    self.policy_api.enforce(creds,
-                                        action,
-                                        utils.flatten_dict(policy_dict))
                 LOG.debug('RBAC: Authorization granted')
             return f(self, context, *args, **kwargs)
         return inner
