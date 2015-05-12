@@ -23,9 +23,8 @@ from keystone.i18n import _
 
 CONF = cfg.CONF
 # supported token versions
-V2 = 'v2.0'
 V3 = 'v3.0'
-VERSIONS = frozenset([V2, V3])
+VERSIONS = frozenset([V3])
 
 
 def _parse_and_normalize_time(time_data):
@@ -44,10 +43,7 @@ class KeystoneToken(dict):
 
     def __init__(self, token_id, token_data):
         self.token_data = token_data
-        if 'access' in token_data:
-            super(KeystoneToken, self).__init__(**token_data['access'])
-            self.version = V2
-        elif 'token' in token_data and 'methods' in token_data['token']:
+        if 'token' in token_data and 'methods' in token_data['token']:
             super(KeystoneToken, self).__init__(**token_data['token'])
             self.version = V3
         else:
@@ -70,31 +66,21 @@ class KeystoneToken(dict):
 
     @property
     def expires(self):
-        if self.version is V3:
-            expires_at = self['expires_at']
-        else:
-            expires_at = self['token']['expires']
+        expires_at = self['expires_at']
         return _parse_and_normalize_time(expires_at)
 
     @property
     def issued(self):
-        if self.version is V3:
-            issued_at = self['issued_at']
-        else:
-            issued_at = self['token']['issued_at']
+        issued_at = self['issued_at']
         return _parse_and_normalize_time(issued_at)
 
     @property
     def audit_id(self):
-        if self.version is V3:
-            return self.get('audit_ids', [None])[0]
-        return self['token'].get('audit_ids', [None])[0]
+        return self.get('audit_ids', [None])[0]
 
     @property
     def audit_chain_id(self):
-        if self.version is V3:
-            return self.get('audit_ids', [None])[-1]
-        return self['token'].get('audit_ids', [None])[-1]
+        return self.get('audit_ids', [None])[-1]
 
     @property
     def auth_token(self):
@@ -111,10 +97,7 @@ class KeystoneToken(dict):
     @property
     def user_domain_name(self):
         try:
-            if self.version == V3:
-                return self['user']['domain']['name']
-            elif 'user' in self:
-                return "Default"
+            return self['user']['domain']['name']
         except KeyError:
             # Do not raise KeyError, raise UnexpectedError
             pass
@@ -123,10 +106,7 @@ class KeystoneToken(dict):
     @property
     def user_domain_id(self):
         try:
-            if self.version == V3:
-                return self['user']['domain']['id']
-            elif 'user' in self:
-                return CONF.identity.default_domain_id
+            return self['user']['domain']['id']
         except KeyError:
             # Do not raise KeyError, raise UnexpectedError
             pass
@@ -134,33 +114,25 @@ class KeystoneToken(dict):
 
     @property
     def domain_id(self):
-        if self.version is V3:
-            try:
-                return self['domain']['id']
-            except KeyError:
-                # Do not raise KeyError, raise UnexpectedError
-                raise exception.UnexpectedError()
-        # No domain scoped tokens in V2.
-        raise NotImplementedError()
+        try:
+            return self['domain']['id']
+        except KeyError:
+            # Do not raise KeyError, raise UnexpectedError
+            raise exception.UnexpectedError()
+
 
     @property
     def domain_name(self):
-        if self.version is V3:
-            try:
-                return self['domain']['name']
-            except KeyError:
-                # Do not raise KeyError, raise UnexpectedError
-                raise exception.UnexpectedError()
-        # No domain scoped tokens in V2.
-        raise NotImplementedError()
+        try:
+            return self['domain']['name']
+        except KeyError:
+            # Do not raise KeyError, raise UnexpectedError
+            raise exception.UnexpectedError()
 
     @property
     def project_id(self):
         try:
-            if self.version is V3:
-                return self['project']['id']
-            else:
-                return self['token']['tenant']['id']
+            return self['project']['id']
         except KeyError:
             # Do not raise KeyError, raise UnexpectedError
             raise exception.UnexpectedError()
@@ -168,10 +140,7 @@ class KeystoneToken(dict):
     @property
     def project_name(self):
         try:
-            if self.version is V3:
-                return self['project']['name']
-            else:
-                return self['token']['tenant']['name']
+            return self['project']['name']
         except KeyError:
             # Do not raise KeyError, raise UnexpectedError
             raise exception.UnexpectedError()
@@ -179,41 +148,28 @@ class KeystoneToken(dict):
     @property
     def project_domain_id(self):
         try:
-            if self.version is V3:
-                return self['project']['domain']['id']
-            elif 'tenant' in self['token']:
-                return CONF.identity.default_domain_id
+            return self['project']['domain']['id']
         except KeyError:
             # Do not raise KeyError, raise UnexpectedError
             pass
-
         raise exception.UnexpectedError()
 
     @property
     def project_domain_name(self):
         try:
-            if self.version is V3:
-                return self['project']['domain']['name']
-            if 'tenant' in self['token']:
-                return 'Default'
+            return self['project']['domain']['name']
         except KeyError:
             # Do not raise KeyError, raise UnexpectedError
             pass
-
         raise exception.UnexpectedError()
 
     @property
     def project_scoped(self):
-        if self.version is V3:
             return 'project' in self
-        else:
-            return 'tenant' in self['token']
 
     @property
     def domain_scoped(self):
-        if self.version is V3:
             return 'domain' in self
-        return False
 
     @property
     def scoped(self):
@@ -221,40 +177,25 @@ class KeystoneToken(dict):
 
     @property
     def trust_id(self):
-        if self.version is V3:
-            return self.get('OS-TRUST:trust', {}).get('id')
-        else:
-            return self.get('trust', {}).get('id')
+        return self.get('OS-TRUST:trust', {}).get('id')
 
     @property
     def trust_scoped(self):
-        if self.version is V3:
-            return 'OS-TRUST:trust' in self
-        else:
-            return 'trust' in self
+        return 'OS-TRUST:trust' in self
 
     @property
     def trustee_user_id(self):
-        if self.version is V3:
-            return self.get(
+        return self.get(
                 'OS-TRUST:trust', {}).get('trustee_user_id')
-        else:
-            return self.get('trust', {}).get('trustee_user_id')
 
     @property
     def trustor_user_id(self):
-        if self.version is V3:
-            return self.get(
+        return self.get(
                 'OS-TRUST:trust', {}).get('trustor_user_id')
-        else:
-            return self.get('trust', {}).get('trustor_user_id')
 
     @property
     def trust_impersonation(self):
-        if self.version is V3:
-            return self.get('OS-TRUST:trust', {}).get('impersonation')
-        else:
-            return self.get('trust', {}).get('impersonation')
+        return self.get('OS-TRUST:trust', {}).get('impersonation')
 
     @property
     def oauth_scoped(self):
@@ -262,35 +203,27 @@ class KeystoneToken(dict):
 
     @property
     def oauth_access_token_id(self):
-        if self.version is V3 and self.oauth_scoped:
+        if self.oauth_scoped:
             return self['OS-OAUTH1']['access_token_id']
         return None
 
     @property
     def oauth_consumer_id(self):
-        if self.version is V3 and self.oauth_scoped:
+        if self.oauth_scoped:
             return self['OS-OAUTH1']['consumer_id']
         return None
 
     @property
     def role_ids(self):
-        if self.version is V3:
             return [r['id'] for r in self.get('roles', [])]
-        else:
-            return self.get('metadata', {}).get('roles', [])
 
     @property
     def role_names(self):
-        if self.version is V3:
             return [r['name'] for r in self.get('roles', [])]
-        else:
-            return [r['name'] for r in self['user'].get('roles', [])]
 
     @property
     def bind(self):
-        if self.version is V3:
             return self.get('bind')
-        return self.get('token', {}).get('bind')
 
     @property
     def metadata(self):
@@ -298,6 +231,4 @@ class KeystoneToken(dict):
 
     @property
     def methods(self):
-        if self.version is V3:
-            return self.get('methods', [])
-        return []
+        return self.get('methods', [])

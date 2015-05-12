@@ -48,27 +48,27 @@ isol_rules = {
     "identity:list_users_in_group": "domain_id:%(target.group.domain_id)s",
     "identity:list_projects_for_groups": "",
     "identity:list_domains_for_groups": "",
+# grant(it's very loose)
+    "identity:check_grant": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
+    "identity:list_grants": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
+    "identity:create_grant": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
+    "identity:revoke_grant": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
+# role assignment
+    "identity:list_role_assignments": "user_id:%(user.id)s or domain_id:%(scope.domain.id)s or project_id:%(scope.project.id)s",
+# token
+    "identity:revoke_token": "user_id:%(target.token.user_id)s or domain_id:%(target.token.user.domain.id)s",
 # role
     "identity:get_role": "domain_id:%(target.role.domain_id)s",
     "identity:list_roles": "domain_id:%(domain_id)s",
     "identity:create_role": "domain_id:%(role.domain_id)s",
     "identity:update_role": "domain_id:%(target.role.domain_id)s",
     "identity:delete_role": "domain_id:%(target.role.domain_id)s",
-# grant
-    "identity:check_grant": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
-    "identity:list_grants": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
-    "identity:create_grant": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
-    "identity:revoke_grant": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s or project_id:%(project_id)s",
-# role assignment
-    "identity:list_role_assignments": "domain_id:%(scope.domain.id)s or project_id:%(scope.project.id)s",
 # policy
     "identity:get_policy": "domain_id:%(target.policy.domain_id)s",
     "identity:list_policies": "domain_id:%(domain_id)s",
     "identity:create_policy": "domain_id:%(policy.domain_id)s",
     "identity:update_policy": "domain_id:%(target.policy.domain_id)s",
     "identity:delete_policy": "domain_id:%(target.policy.domain_id)s",
-# token
-    "identity:revoke_token": "domain_id:%(target.token.user.domain.id)s",
 # domain config
     "identity:create_domain_config": "domain_id:%(domain_config.domain_id)s",
     "identity:get_domain_config": "domain_id:%(target.domain_config.domain_id)s",
