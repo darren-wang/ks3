@@ -36,6 +36,20 @@ LOG = log.getLogger(__name__)
 CONF = cfg.CONF
 
 
+_ISOLATION = None
+
+
+def isol_reset():
+    global _ISOLATION
+    _ISOLATION = None
+
+
+def isol_init():
+    global _ISOLATION
+    if not _ISOLATION:
+        _ISOLATION = isolation.IsolationRules()
+
+
 def _build_policy_check_credentials(self, action, context, kwargs):
     LOG.debug('RBAC: Authorizing %(action)s(%(kwargs)s)', {
         'action': action,
@@ -85,6 +99,7 @@ def protected(callback=None):
     def wrapper(f):
         @functools.wraps(f)
         def inner(self, context, *args, **kwargs):
+            isol_init()
             if 'is_admin' in context and context['is_admin']:
                 LOG.warning(_LW('RBAC: Bypassing authorization'))
             elif callback is not None:
@@ -136,7 +151,7 @@ def protected(callback=None):
                 # parameter for calls like create and update will be included.
                 policy_dict.update(kwargs)
                 # (Darren) System hard-coded isolation check 
-                self.policy_api.enforce(creds, isolation.isol_rules[action],
+                self.policy_api.enforce(creds, _ISOLATION.isol_rules[action],
                                         utils.flatten_dict(policy_dict))
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.default_domain_id:
@@ -164,6 +179,7 @@ def filterprotected(*filters):
     def _filterprotected(f):
         @functools.wraps(f)
         def wrapper(self, context, **kwargs):
+            isol_init()
             if not context['is_admin']:
                 action = 'identity:%s' % f.__name__
                 creds = _build_policy_check_credentials(self, action,
@@ -190,13 +206,13 @@ def filterprotected(*filters):
                 for key in kwargs:
                     target[key] = kwargs[key]
 
-                self.policy_api.enforce(creds, isolation.isol_rules[action],
-                                        utils.flatten_dict(policy_dict))
+                self.policy_api.enforce(creds, _ISOLATION.isol_rules[action],
+                                        utils.flatten_dict(target))
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.default_domain_id:
                     self.policy_api.enforce(creds,
                                         action,
-                                        utils.flatten_dict(policy_dict))
+                                        utils.flatten_dict(target))
                 else:    
                     domain_rules = self.policy_api.list_policies_in_domain(
                                                             user_domain_id)
@@ -204,7 +220,7 @@ def filterprotected(*filters):
                     rule_dict = jsonutils.loads(domain_rules[0].blob)
                     rule_dict = policy.Rules.from_dict(rule_dict)
                     self.policy_api.enforce(creds, action,
-                                        utils.flatten_dict(policy_dict),
+                                        utils.flatten_dict(target),
                                         rule_dict=rule_dict)
 
                 LOG.debug('RBAC: Authorization granted')
