@@ -21,7 +21,6 @@ from oslo_policy import policy as common_policy
 
 from keystone import exception
 from keystone import policy
-from keystone.common import isolation
 
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
