@@ -281,10 +281,10 @@ class V3TokenDataHelper(object):
         if include_catalog:
             self._populate_service_catalog(token_data, user_id, domain_id,
                                            project_id, trust)
-        self._populate_service_providers(token_data)
+#        self._populate_service_providers(token_data)
         self._populate_token_dates(token_data, expires=expires, trust=trust,
                                    issued_at=issued_at)
-        self._populate_oauth_section(token_data, access_token)
+#        self._populate_oauth_section(token_data, access_token)
         return {'token': token_data}
 
 
@@ -328,7 +328,7 @@ class BaseProvider(provider.Provider):
         access_token = None
         if 'oauth1' in method_names:
             access_token_id = auth_context['access_token_id']
-            access_token = self.oauth_api.get_access_token(access_token_id)
+#            access_token = self.oauth_api.get_access_token(access_token_id)
 
         token_data = self.v3_token_data_helper.get_token_data(
             user_id,
