@@ -321,9 +321,9 @@ class BaseProvider(provider.Provider):
             trust = self.trust_api.get_trust(metadata_ref['trust_id'])
 
         token_ref = None
-        if auth_context and self._is_mapped_token(auth_context):
-            token_ref = self._handle_mapped_tokens(
-                auth_context, project_id, domain_id)
+#        if auth_context and self._is_mapped_token(auth_context):
+#            token_ref = self._handle_mapped_tokens(
+#                auth_context, project_id, domain_id)
 
         access_token = None
         if 'oauth1' in method_names:
