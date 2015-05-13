@@ -1,5 +1,4 @@
 import sqlalchemy as sql
-import migrate
 
 _POLICY_TABLE_NAME = 'policy'
 
