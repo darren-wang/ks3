@@ -122,10 +122,7 @@ class Token(token.persistence.Driver):
             # _list_tokens is smart enough to handle almost any case of
             # valid/invalid/expired for a given token.
             token_data = data_copy['token_data']
-            if data_copy['token_version'] == token.provider.V2:
-                trustee_user_id = token_data['access']['trust'][
-                    'trustee_user_id']
-            elif data_copy['token_version'] == token.provider.V3:
+            if data_copy['token_version'] == token.provider.V3:
                 trustee_user_id = token_data['OS-TRUST:trust'][
                     'trustee_user_id']
             else:

@@ -268,66 +268,6 @@ class Catalog(catalog.Driver):
             ref.extra = new_endpoint.extra
         return ref.to_dict()
 
-    def get_catalog(self, user_id, tenant_id):
-        """Retrieve and format the V2 service catalog.
-
-        :param user_id: The id of the user who has been authenticated for
-            creating service catalog.
-        :param tenant_id: The id of the project. 'tenant_id' will be None
-            in the case this being called to create a catalog to go in a
-            domain scoped token. In this case, any endpoint that requires
-            a tenant_id as part of their URL will be skipped (as would a whole
-            service if, as a consequence, it has no valid endpoints).
-
-        :returns: A nested dict representing the service catalog or an
-                  empty dict.
-
-        """
-        substitutions = dict(
-            itertools.chain(six.iteritems(CONF),
-                            six.iteritems(CONF.eventlet_server)))
-        substitutions.update({'user_id': user_id})
-        silent_keyerror_failures = []
-        if tenant_id:
-            substitutions.update({'tenant_id': tenant_id})
-        else:
-            silent_keyerror_failures = ['tenant_id']
-
-        session = sql.get_session()
-        endpoints = (session.query(Endpoint).
-                     options(sql.joinedload(Endpoint.service)).
-                     filter(Endpoint.enabled == true()).all())
-
-        catalog = {}
-
-        for endpoint in endpoints:
-            if not endpoint.service['enabled']:
-                continue
-            try:
-                formatted_url = core.format_url(
-                    endpoint['url'], substitutions,
-                    silent_keyerror_failures=silent_keyerror_failures)
-                if formatted_url is not None:
-                    url = formatted_url
-                else:
-                    continue
-            except exception.MalformedEndpoint:
-                continue  # this failure is already logged in format_url()
-
-            region = endpoint['region_id']
-            service_type = endpoint.service['type']
-            default_service = {
-                'id': endpoint['id'],
-                'name': endpoint.service.extra.get('name', ''),
-                'publicURL': ''
-            }
-            catalog.setdefault(region, {})
-            catalog[region].setdefault(service_type, default_service)
-            interface_url = '%sURL' % endpoint['interface']
-            catalog[region][service_type][interface_url] = url
-
-        return catalog
-
     def get_v3_catalog(self, user_id, tenant_id):
         """Retrieve and format the current V3 service catalog.
 

@@ -303,8 +303,6 @@ class BaseProvider(provider.Provider):
             # revisions. It is better to just specify the token_version in
             # the token_data itself. This way we can support future versions
             # that might have the same fields.
-            if 'access' in token_data:
-                return token.provider.V2
             if 'token' in token_data and 'methods' in token_data['token']:
                 return token.provider.V3
         raise exception.UnsupportedTokenVersionException()

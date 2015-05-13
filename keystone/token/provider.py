@@ -45,7 +45,6 @@ MEMOIZE = cache.get_memoization_decorator(section='token')
 UnsupportedTokenVersionException = exception.UnsupportedTokenVersionException
 
 # supported token versions
-V2 = token_model.V2
 V3 = token_model.V3
 VERSIONS = token_model.VERSIONS
 
@@ -110,7 +109,6 @@ class Manager(manager.Manager):
 
     """
 
-    V2 = V2
     V3 = V3
     VERSIONS = VERSIONS
     INVALIDATE_PROJECT_TOKEN_PERSISTENCE = 'invalidate_project_tokens'
@@ -210,9 +208,7 @@ class Manager(manager.Manager):
 
     def check_revocation(self, token):
         version = self.driver.get_token_version(token)
-        if version == V2:
-            return self.check_revocation_v2(token)
-        else:
+        if version == V3:
             return self.check_revocation_v3(token)
 
     def validate_v3_token(self, token_id):
@@ -240,8 +236,6 @@ class Manager(manager.Manager):
         version = self.driver.get_token_version(token_ref)
         if version == self.V3:
             return self.driver.validate_v3_token(token_ref)
-        elif version == self.V2:
-            return self.driver.validate_v2_token(token_ref)
         raise exception.UnsupportedTokenVersionException()
 
     @MEMOIZE

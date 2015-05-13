@@ -247,7 +247,7 @@ class Manager(manager.Manager):
 
     def get_catalog(self, user_id, tenant_id):
         try:
-            return self.driver.get_catalog(user_id, tenant_id)
+            return self.driver.get_v3_catalog(user_id, tenant_id)
         except exception.NotFound:
             raise exception.NotFound('Catalog not found for user and tenant')
 
