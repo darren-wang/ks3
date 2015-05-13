@@ -68,12 +68,7 @@ isol_rules = {
     "identity:list_policies": "domain_id:%(domain_id)s",
     "identity:create_policy": "domain_id:%(policy.domain_id)s",
     "identity:update_policy": "domain_id:%(target.policy.domain_id)s",
-    "identity:delete_policy": "domain_id:%(target.policy.domain_id)s",
-# domain config
-    "identity:create_domain_config": "domain_id:%(domain_config.domain_id)s",
-    "identity:get_domain_config": "domain_id:%(target.domain_config.domain_id)s",
-    "identity:update_domain_config": "domain_id:%(target.domain_config.domain_id)s",
-    "identity:delete_domain_config": "domain_id:%(target.domain_config.domain_id)s"
+    "identity:delete_policy": "domain_id:%(target.policy.domain_id)s"
 }
 
 
