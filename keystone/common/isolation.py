@@ -77,5 +77,4 @@ class IsolationRules(object):
         # Next, we are going to point isol_dict to the result of parsed 
         # dict above, the dict above will no longer occupy memory since
         # it's no longer referenced.
-        self.isol_rules = common_policy.Rules.from_dict(self.isol_rules, self.isol_rules['default'])
-        LOG.debug("\nDefault rule of isol_rules:%s\n" %type(self.isol_rules.default_rule))
+        self.isol_rules = common_policy.Rules.from_dict(self.isol_rules, 'default')
