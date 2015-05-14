@@ -26,23 +26,19 @@ CONF = cfg.CONF
 
 class User(sql.ModelBase, sql.DictBase):
     __tablename__ = 'user'
-    attributes = ['id', 'name', 'domain_id', 'password', 'enabled',
-                  'default_project_id']
+    attributes = ['id', 'name', 'domain_id', 'password', 'enabled']
     id = sql.Column(sql.String(64), primary_key=True)
     name = sql.Column(sql.String(255), nullable=False)
     domain_id = sql.Column(sql.String(64), nullable=False)
     password = sql.Column(sql.String(128))
     enabled = sql.Column(sql.Boolean)
     extra = sql.Column(sql.JsonBlob())
-    default_project_id = sql.Column(sql.String(64))
     # Unique constraint across two columns to create the separation
     # rather than just only 'name' being unique
     __table_args__ = (sql.UniqueConstraint('domain_id', 'name'), {})
 
     def to_dict(self, include_extra_dict=False):
         d = super(User, self).to_dict(include_extra_dict=include_extra_dict)
-        if 'default_project_id' in d and d['default_project_id'] is None:
-            del d['default_project_id']
         return d
 
 

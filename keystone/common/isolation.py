@@ -49,10 +49,10 @@ class IsolationRules(object):
             "identity:delete_project": "domain_id:%(target.project.domain_id)s",
         # user    
             "identity:list_users": "domain_id:%(domain_id)s",
-            "identity:create_user": "domain_id:%(user.domain_id)s or project_id:%(user.default_project_id)s",
+            "identity:create_user": "domain_id:%(user.domain_id)s",
             "identity:get_user": "user_id:%(user_id)s or user_id:%(target.user.id)s or domain_id:%(target.user.domain_id)s",
-            "identity:update_user": "user_id:%(user_id)s or user_id:%(target.user.id)s or domain_id:%(target.user.domain_id)s or project_id:%(target.user.default_project_id)s",
-            "identity:delete_user": "domain_id:%(target.user.domain_id)s or project_id:%(target.user.default_project_id)s",
+            "identity:update_user": "user_id:%(user_id)s or user_id:%(target.user.id)s or domain_id:%(target.user.domain_id)s",
+            "identity:delete_user": "domain_id:%(target.user.domain_id)s",
         # group
             "identity:get_group": "domain_id:%(target.group.domain_id)s",
             "identity:list_groups": "domain_id:%(domain_id)s",
