@@ -194,7 +194,6 @@ class Manager(manager.Manager):
         # NOTE(morganfainberg): Ensure we never use the long-form token_id
         # (PKI) as part of the cache_key.
         token = self._validate_token(unique_id)
-        self._token_belongs_to(token, belongs_to)
         self._is_valid_token(token)
         return token
 
@@ -269,19 +268,6 @@ class Manager(manager.Manager):
         else:
             raise exception.TokenNotFound(_('Failed to validate token'))
 
-    def _token_belongs_to(self, token, belongs_to):
-        """Check if the token belongs to the right tenant.
-
-        This is only used on v2 tokens.  The structural validity of the token
-        will have already been checked before this method is called.
-
-        """
-        if belongs_to:
-            token_data = token['access']['token']
-            if ('tenant' not in token_data or
-                    token_data['tenant']['id'] != belongs_to):
-                raise exception.Unauthorized()
-
     def issue_v3_token(self, user_id, method_names, expires_at=None,
                        project_id=None, domain_id=None, auth_context=None,
                        trust=None, metadata_ref=None, include_catalog=True,
@@ -331,7 +317,6 @@ class Manager(manager.Manager):
         # do the explicit individual token invalidation.
 
         self._validate_token.invalidate(self, token_id)
-        self._validate_v2_token.invalidate(self, token_id)
         self._validate_v3_token.invalidate(self, token_id)
 
     def revoke_token(self, token_id, revoke_chain=False):

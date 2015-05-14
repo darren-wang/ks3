@@ -19,7 +19,6 @@ from oslo_utils import timeutils
 import six
 from six.moves.urllib import parse
 
-from keystone.common import controller as common_controller
 from keystone.common import dependency
 #from keystone.contrib import federation
 from keystone import exception
@@ -130,13 +129,6 @@ class V3TokenDataHelper(object):
             'domain': self._get_filtered_domain(user_ref['domain_id'])}
         token_data['user'] = filtered_user
 
-    def _populate_oauth_section(self, token_data, access_token):
-        if access_token:
-            access_token_id = access_token['id']
-            consumer_id = access_token['consumer_id']
-            token_data['OS-OAUTH1'] = ({'access_token_id': access_token_id,
-                                        'consumer_id': consumer_id})
-
     def _populate_roles(self, token_data, user_id, domain_id, project_id,
                         trust, access_token):
         if 'roles' in token_data:
@@ -215,14 +207,6 @@ class V3TokenDataHelper(object):
             # TODO(ayoung): Enforce Endpoints for trust
             token_data['catalog'] = service_catalog
 
-    def _populate_service_providers(self, token_data):
-        if 'service_providers' in token_data:
-            return
-
-        service_providers = self.federation_api.get_enabled_service_providers()
-        if service_providers:
-            token_data['service_providers'] = service_providers
-
     def _populate_token_dates(self, token_data, expires=None, trust=None,
                               issued_at=None):
         if not expires:
@@ -281,10 +265,8 @@ class V3TokenDataHelper(object):
         if include_catalog:
             self._populate_service_catalog(token_data, user_id, domain_id,
                                            project_id, trust)
-#        self._populate_service_providers(token_data)
         self._populate_token_dates(token_data, expires=expires, trust=trust,
                                    issued_at=issued_at)
-#        self._populate_oauth_section(token_data, access_token)
         return {'token': token_data}
 
 
@@ -307,10 +289,6 @@ class BaseProvider(provider.Provider):
                 return token.provider.V3
         raise exception.UnsupportedTokenVersionException()
 
-#    def _is_mapped_token(self, auth_context):
-#        return (federation.IDENTITY_PROVIDER in auth_context and
-#                federation.PROTOCOL in auth_context)
-
     def issue_v3_token(self, user_id, method_names, expires_at=None,
                        project_id=None, domain_id=None, auth_context=None,
                        trust=None, metadata_ref=None, include_catalog=True,
@@ -321,14 +299,8 @@ class BaseProvider(provider.Provider):
             trust = self.trust_api.get_trust(metadata_ref['trust_id'])
 
         token_ref = None
-#        if auth_context and self._is_mapped_token(auth_context):
-#            token_ref = self._handle_mapped_tokens(
-#                auth_context, project_id, domain_id)
 
         access_token = None
-        if 'oauth1' in method_names:
-            access_token_id = auth_context['access_token_id']
-#            access_token = self.oauth_api.get_access_token(access_token_id)
 
         token_data = self.v3_token_data_helper.get_token_data(
             user_id,
@@ -347,56 +319,11 @@ class BaseProvider(provider.Provider):
         token_id = self._get_token_id(token_data)
         return token_id, token_data
 
-#    def _handle_mapped_tokens(self, auth_context, project_id, domain_id):
-#        def get_federated_domain():
-#            return (CONF.federation.federated_domain_name or
-#                    federation.FEDERATED_DOMAIN_KEYWORD)
-#
-#        federated_domain = get_federated_domain()
-#        user_id = auth_context['user_id']
-#        group_ids = auth_context['group_ids']
-#        idp = auth_context[federation.IDENTITY_PROVIDER]
-#        protocol = auth_context[federation.PROTOCOL]
-#        token_data = {
-#            'user': {
-#                'id': user_id,
-#                'name': parse.unquote(user_id),
-#                federation.FEDERATION: {
-#                    'identity_provider': {'id': idp},
-#                    'protocol': {'id': protocol}
-#                },
-#                'domain': {
-#                    'id': federated_domain,
-#                    'name': federated_domain
-#                }
-#            }
-#        }
-#
-#        if project_id or domain_id:
-#            roles = self.v3_token_data_helper._populate_roles_for_groups(
-#                group_ids, project_id, domain_id, user_id)
-#            token_data.update({'roles': roles})
-#        else:
-#            token_data['user'][federation.FEDERATION].update({
-#                'groups': [{'id': x} for x in group_ids]
-#            })
-#        return token_data
-
     def _verify_token_ref(self, token_ref):
         """Verify and return the given token_ref."""
         if not token_ref:
             raise exception.Unauthorized()
         return token_ref
-
-#    def _assert_is_not_federation_token(self, token_ref):
-#        """Make sure we aren't using v2 auth on a federation token."""
-#        token_data = token_ref.get('token_data')
-#        if (token_data and self.get_token_version(token_data) ==
-#                token.provider.V3):
-#            if 'OS-FEDERATION' in token_data['token']['user']:
-#                msg = _('Attempting to use OS-FEDERATION token with V2 '
-#                        'Identity Service, use V3 Authentication')
-#                raise exception.Unauthorized(msg)
 
     def _assert_default_domain(self, token_ref):
         """Make sure we are operating on default domain only."""
