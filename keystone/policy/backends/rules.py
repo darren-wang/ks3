@@ -75,8 +75,8 @@ def enforce(credentials, action, target, rule_dict=None, do_raise=True):
 class Policy(policy.Driver):
 
     def enforce(self, credentials, action, target, rule_dict=None):
-        LOG.debug('API protection:\n%(credentials)s \nacts\n'
-        '%(action)s\non\n%(target)s', {
+        LOG.debug('API protection:\nSUBJECT\n\t%(credentials)s \nACT'
+        '\n\taction: %(action)s\nON\n\ttarget: %(target)s\n', {
             'action': action,
             'credentials': credentials,
             'target':target})

@@ -156,8 +156,9 @@ def protected(callback=None):
                                         action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=_ISOLATION.isol_rules)
-                LOG.debug('\nI####SOLATION CHECK SUCCESS####\n')
-
+                LOG.debug('\n####ISOLATION CHECK SUCCESS####\n')
+                
+                LOG.debug('\n####RBAC CHECK BEGINS####\n')
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
@@ -173,7 +174,7 @@ def protected(callback=None):
                                         action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=rule_dict)
-                LOG.debug('\nRBAC: Authorization granted\n')
+                LOG.debug('\n####RBAC CHECK SUCCESS####\n')
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
@@ -217,8 +218,9 @@ def filterprotected(*filters):
                                         action,
                                         utils.flatten_dict(target),
                                         rule_dict=_ISOLATION.isol_rules)
-                LOG.debug('\nI####SOLATION CHECK SUCCESS####\n')
+                LOG.debug('\n####ISOLATION CHECK SUCCESS####\n')
                 
+                LOG.debug('\n####RBAC CHECK BEGINS####\n')
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
@@ -235,7 +237,7 @@ def filterprotected(*filters):
                                         utils.flatten_dict(target),
                                         rule_dict=rule_dict)
 
-                LOG.debug('RBAC: Authorization granted')
+                LOG.debug('\n####RBAC CHECK SUCCESS####\n')
             else:
                 LOG.warning(_LW('RBAC: Bypassing authorization'))
             return f(self, context, filters, **kwargs)
