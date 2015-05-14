@@ -151,7 +151,8 @@ def protected(callback=None):
                 # parameter for calls like create and update will be included.
                 policy_dict.update(kwargs)
                 # (Darren) System hard-coded isolation check 
-                self.policy_api.enforce(creds, action,
+                self.policy_api.enforce(creds,
+                                        action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=_ISOLATION.isol_rules)
                 LOG.debug('\nISOLATION: Authorization granted\n')

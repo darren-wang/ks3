@@ -23,7 +23,7 @@ class IsolationRules(object):
             "default": "@",  
             "admin_domain": "domain_id:" + CONF.identity.admin_domain_id,
         # region
-            "identity:create_region":"rule:admin_domain",
+            "identity:create_region": "rule:admin_domain",
             "identity:update_region": "rule:admin_domain",
             "identity:delete_region": "rule:admin_domain",
         # service
