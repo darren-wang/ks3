@@ -151,11 +151,12 @@ def protected(callback=None):
                 # parameter for calls like create and update will be included.
                 policy_dict.update(kwargs)
                 # (Darren) System hard-coded isolation check 
+                LOG.debug('\n####ISOLATION CHECK BEGINS####\n')
                 self.policy_api.enforce(creds,
                                         action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=_ISOLATION.isol_rules)
-                LOG.debug('\nISOLATION: Authorization granted\n')
+                LOG.debug('\nI####SOLATION CHECK SUCCESS####\n')
 
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.admin_domain_id:
@@ -168,7 +169,8 @@ def protected(callback=None):
                     # Assume policy are written in JSON
                     rule_dict = jsonutils.loads(domain_rules[0].blob)
                     rule_dict = policy.Rules.from_dict(rule_dict)
-                    self.policy_api.enforce(creds, action,
+                    self.policy_api.enforce(creds, 
+                                        action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=rule_dict)
                 LOG.debug('\nRBAC: Authorization granted\n')
@@ -209,9 +211,14 @@ def filterprotected(*filters):
                 # Now any formal url parameters
                 for key in kwargs:
                     target[key] = kwargs[key]
-
-                self.policy_api.enforce(creds, _ISOLATION.isol_rules[action],
-                                        utils.flatten_dict(target))
+                
+                LOG.debug('\n####ISOLATION CHECK BEGINS####\n')
+                self.policy_api.enforce(creds,
+                                        action,
+                                        utils.flatten_dict(target),
+                                        rule_dict=_ISOLATION.isol_rules)
+                LOG.debug('\nI####SOLATION CHECK SUCCESS####\n')
+                
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
@@ -223,7 +230,8 @@ def filterprotected(*filters):
                     # Assume policy are written in JSON
                     rule_dict = jsonutils.loads(domain_rules[0].blob)
                     rule_dict = policy.Rules.from_dict(rule_dict)
-                    self.policy_api.enforce(creds, action,
+                    self.policy_api.enforce(creds,
+                                        action,
                                         utils.flatten_dict(target),
                                         rule_dict=rule_dict)
 
