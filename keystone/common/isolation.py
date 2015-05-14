@@ -1,8 +1,10 @@
 from oslo_config import cfg
+from oslo_log import log
 from oslo_policy import policy as common_policy
 
 
 CONF = cfg.CONF
+LOG = log.getLogger(__name__)
 
 # This dict is unusable due to following reasons:
 # 1. It's just my expectation to have isolation in this way, the attributes used
@@ -76,3 +78,4 @@ class IsolationRules(object):
         # dict above, the dict above will no longer occupy memory since
         # it's no longer referenced.
         self.isol_rules = common_policy.Rules.from_dict(self.isol_rules, self.isol_rules['default'])
+        LOG.debug(self.iso_rules['default'])
