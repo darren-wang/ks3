@@ -18,7 +18,7 @@ isol_rules = {
     # so if an action isn't found in this dict, it is in the charge
     # of RBAC enforcer.
     "default": "",  
-    "admin_domain": "domain_id:" + CONF.identity.default_domain_id, # what if this value changes?
+    "admin_domain": "domain_id:" + CONF.identity.admin_domain_id, # what if this value changes?
     "owner": "user_id:%(user_id)s or user_id:%(target.token.user_id)s",
     "matching_domain_id": "domain_id:%(domain_id)s",
 # domain

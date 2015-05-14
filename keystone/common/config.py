@@ -112,7 +112,7 @@ FILE_OPTIONS = {
                         '"HTTP_X_FORWARDED_PROTO".'),
     ],
     'identity': [
-        cfg.StrOpt('default_domain_id', default='default',
+        cfg.StrOpt('admin_domain_id', default='default',
                    help='This references the domain to use for all '
                         'Identity API v2 requests (which are not aware of '
                         'domains). A domain with this ID will be created '

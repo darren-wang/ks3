@@ -334,7 +334,7 @@ class BaseProvider(provider.Provider):
             msg = _('Non-default domain is not supported')
             # user in a non-default is prohibited
             if (token_ref['token_data']['token']['user']['domain']['id'] !=
-                    CONF.identity.default_domain_id):
+                    CONF.identity.admin_domain_id):
                 raise exception.Unauthorized(msg)
             # domain scoping is prohibited
             if token_ref['token_data']['token'].get('domain'):
@@ -345,7 +345,7 @@ class BaseProvider(provider.Provider):
                 project = token_ref['token_data']['token']['project']
                 project_domain_id = project['domain']['id']
                 # scoped to project in non-default domain is prohibited
-                if project_domain_id != CONF.identity.default_domain_id:
+                if project_domain_id != CONF.identity.admin_domain_id:
                     raise exception.Unauthorized(msg)
             # if token is scoped to trust, both trustor and trustee must
             # be in the default domain. Furthermore, the delegated project
@@ -356,17 +356,17 @@ class BaseProvider(provider.Provider):
                 trustee_user_ref = self.identity_api.get_user(
                     trust_ref['trustee_user_id'])
                 if (trustee_user_ref['domain_id'] !=
-                        CONF.identity.default_domain_id):
+                        CONF.identity.admin_domain_id):
                     raise exception.Unauthorized(msg)
                 trustor_user_ref = self.identity_api.get_user(
                     trust_ref['trustor_user_id'])
                 if (trustor_user_ref['domain_id'] !=
-                        CONF.identity.default_domain_id):
+                        CONF.identity.admin_domain_id):
                     raise exception.Unauthorized(msg)
                 project_ref = self.resource_api.get_project(
                     trust_ref['project_id'])
                 if (project_ref['domain_id'] !=
-                        CONF.identity.default_domain_id):
+                        CONF.identity.admin_domain_id):
                     raise exception.Unauthorized(msg)
 
     def validate_v3_token(self, token_ref):

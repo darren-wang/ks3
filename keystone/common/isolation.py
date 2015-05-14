@@ -21,7 +21,7 @@ class IsolationRules(object):
             # so if an action isn't found in this dict, it is in the charge
             # of RBAC enforcer.
             "default": "@",  
-            "admin_domain": "domain_id:" + CONF.identity.default_domain_id, # what if this value changes?
+            "admin_domain": "domain_id:" + CONF.identity.admin_domain_id, # what if this value changes?
         # domain
             "identity:get_domain": "domain_id:%(target.domain.id)s",
             "identity:update_domain": "domain_id:%(target.domain.id)s",

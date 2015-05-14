@@ -249,7 +249,7 @@ class RevokeTree(object):
         return False
 
 
-def build_token_values_v2(access, default_domain_id):
+def build_token_values_v2(access, admin_domain_id):
     token_data = access['token']
 
     token_expires_at = timeutils.parse_isotime(token_data['expires'])
@@ -274,8 +274,8 @@ def build_token_values_v2(access, default_domain_id):
     else:
         token_values['project_id'] = None
 
-    token_values['identity_domain_id'] = default_domain_id
-    token_values['assignment_domain_id'] = default_domain_id
+    token_values['identity_domain_id'] = admin_domain_id
+    token_values['assignment_domain_id'] = admin_domain_id
 
     trust = token_data.get('trust')
     if trust is None:

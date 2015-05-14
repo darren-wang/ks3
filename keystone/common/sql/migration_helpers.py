@@ -41,7 +41,7 @@ def get_default_domain():
     # Return the reference used for the default domain structure during
     # sql migrations.
     return {
-        'id': CONF.identity.default_domain_id,
+        'id': CONF.identity.admin_domain_id,
         'name': 'Default',
         'enabled': True,
         'extra': jsonutils.dumps({'description': 'Owns users and tenants '

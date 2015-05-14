@@ -154,7 +154,7 @@ def protected(callback=None):
                 self.policy_api.enforce(creds, _ISOLATION.isol_rules[action],
                                         utils.flatten_dict(policy_dict))
                 user_domain_id = creds['scope_domain_id']
-                if user_domain_id == CONF.identity.default_domain_id:
+                if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
                                         action,
                                         utils.flatten_dict(policy_dict))
@@ -209,7 +209,7 @@ def filterprotected(*filters):
                 self.policy_api.enforce(creds, _ISOLATION.isol_rules[action],
                                         utils.flatten_dict(target))
                 user_domain_id = creds['scope_domain_id']
-                if user_domain_id == CONF.identity.default_domain_id:
+                if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
                                         action,
                                         utils.flatten_dict(target))
@@ -605,7 +605,7 @@ class V3Controller(wsgi.Application):
             # the current tempest heat tests issue a v3 call without this.
             # This is raised as bug #1283539.  Once this is fixed, we
             # should remove the line below and replace it with an error.
-            return CONF.identity.default_domain_id
+            return CONF.identity.admin_domain_id
 
     def _normalize_domain_id(self, context, ref):
         """Fill in domain_id if not specified in a v3 call."""

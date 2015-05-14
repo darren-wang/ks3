@@ -39,7 +39,7 @@ def calc_default_domain():
             (u'Owns users and projects (i.e. projects)'
                 ' available on Identity API v2.'),
             'enabled': True,
-            'id': CONF.identity.default_domain_id,
+            'id': CONF.identity.admin_domain_id,
             'name': u'Default'}
 
 
@@ -371,7 +371,7 @@ class Manager(manager.Manager):
 
     def create_domain(self, domain_id, domain, initiator=None):
         if (not self.identity_api.multiple_domains_supported and
-                domain_id != CONF.identity.default_domain_id):
+                domain_id != CONF.identity.admin_domain_id):
             raise exception.Forbidden(_('Multiple domains are not supported'))
 #        self.assert_domain_not_federated(domain_id, domain)
         domain.setdefault('enabled', True)
@@ -424,7 +424,7 @@ class Manager(manager.Manager):
         # explicitly forbid deleting the default domain (this should be a
         # carefully orchestrated manual process involving configuration
         # changes, etc)
-        if domain_id == CONF.identity.default_domain_id:
+        if domain_id == CONF.identity.admin_domain_id:
             raise exception.ForbiddenAction(action=_('delete the default '
                                                      'domain'))
 
@@ -756,7 +756,7 @@ class Driver(object):
         if isinstance(ref, dict):
             if 'domain_id' not in ref:
                 ref = ref.copy()
-                ref['domain_id'] = CONF.identity.default_domain_id
+                ref['domain_id'] = CONF.identity.admin_domain_id
             return ref
         elif isinstance(ref, list):
             return [self._set_default_domain(x) for x in ref]
@@ -771,15 +771,15 @@ class Driver(object):
 
         """
         ref = ref.copy()
-        domain_id = ref.pop('domain_id', CONF.identity.default_domain_id)
-        self._validate_default_domain_id(domain_id)
+        domain_id = ref.pop('domain_id', CONF.identity.admin_domain_id)
+        self._validate_admin_domain_id(domain_id)
         return ref
 
-    def _validate_default_domain_id(self, domain_id):
+    def _validate_admin_domain_id(self, domain_id):
         """Validate that the domain ID specified belongs to the default domain.
 
         """
-        if domain_id != CONF.identity.default_domain_id:
+        if domain_id != CONF.identity.admin_domain_id:
             raise exception.DomainNotFound(domain_id=domain_id)
 
 

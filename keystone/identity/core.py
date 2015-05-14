@@ -542,7 +542,7 @@ class Manager(manager.Manager):
         """
         if not driver.is_domain_aware():
             if domain_id is None:
-                domain_id = conf.default_domain_id
+                domain_id = conf.admin_domain_id
             ref['domain_id'] = domain_id
 
     def _is_mapping_needed(self, driver):
@@ -592,7 +592,7 @@ class Manager(manager.Manager):
         # that would happen is that the default driver is LDAP and the
         # domain is anything other than None or the default domain.
         if (not driver.is_domain_aware() and driver == self.driver and
-            domain_id != CONF.identity.default_domain_id and
+            domain_id != CONF.identity.admin_domain_id and
                 domain_id is not None):
                     LOG.warning('Found multiple domains being mapped to a '
                                 'driver that does not support that (e.g. '
@@ -647,7 +647,7 @@ class Manager(manager.Manager):
             else:
                 # Although we don't have any drivers of this type, i.e. that
                 # understand UUIDs but not domains, conceptually you could.
-                return (conf.default_domain_id, driver, public_id)
+                return (conf.admin_domain_id, driver, public_id)
 
         # So the only place left to find the ID is in the default driver which
         # we now know doesn't generate UUIDs
@@ -671,7 +671,7 @@ class Manager(manager.Manager):
         #
         # It is still possible that the public ID is just invalid in
         # which case we leave this to the caller to check.
-        return (conf.default_domain_id, driver, public_id)
+        return (conf.admin_domain_id, driver, public_id)
 
     def _assert_user_and_group_in_same_backend(
             self, user_entity_id, user_driver, group_entity_id, group_driver):
