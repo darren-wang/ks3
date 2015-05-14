@@ -151,8 +151,11 @@ def protected(callback=None):
                 # parameter for calls like create and update will be included.
                 policy_dict.update(kwargs)
                 # (Darren) System hard-coded isolation check 
-                self.policy_api.enforce(creds, _ISOLATION.isol_rules[action],
-                                        utils.flatten_dict(policy_dict))
+                self.policy_api.enforce(creds, action,
+                                        utils.flatten_dict(policy_dict),
+                                        rule_dict=_ISOLATION.isol_rules)
+                LOG.debug('\nISOLATION: Authorization granted\n')
+
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
@@ -167,7 +170,7 @@ def protected(callback=None):
                     self.policy_api.enforce(creds, action,
                                         utils.flatten_dict(policy_dict),
                                         rule_dict=rule_dict)
-                LOG.debug('RBAC: Authorization granted')
+                LOG.debug('\nRBAC: Authorization granted\n')
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
