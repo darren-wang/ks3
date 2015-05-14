@@ -21,8 +21,23 @@ class IsolationRules(object):
             # so if an action isn't found in this dict, it is in the charge
             # of RBAC enforcer.
             "default": "@",  
-            "admin_domain": "domain_id:" + CONF.identity.admin_domain_id, # what if this value changes?
+            "admin_domain": "domain_id:" + CONF.identity.admin_domain_id,
+        # region
+            "identity:create_region":"rule:admin_domain",
+            "identity:update_region": "rule:admin_domain",
+            "identity:delete_region": "rule:admin_domain",
+        # service
+            "identity:create_service": "rule:admin_domain",
+            "identity:update_service": "rule:admin_domain",
+            "identity:delete_service": "rule:admin_domain",
+        # endpoint
+            "identity:create_endpoint": "rule:admin_domain",
+            "identity:update_endpoint": "rule:admin_domain",
+            "identity:delete_endpoint": "rule:admin_domain",
         # domain
+            "identity:list_domains": "rule:admin_domain",
+            "identity:create_domain": "rule:admin_domain",
+            "identity:delete_domain": "rule:admin_domain",
             "identity:get_domain": "domain_id:%(target.domain.id)s",
             "identity:update_domain": "domain_id:%(target.domain.id)s",
         # project
