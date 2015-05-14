@@ -58,9 +58,11 @@ def token_to_auth_context(token):
     if token.project_scoped:
         auth_context['project_id'] = token.project_id
         auth_context['scope_domain_id'] = token.project_domain_id
+        auth_context['scope'] = 'project'
     elif token.domain_scoped:
         auth_context['domain_id'] = token.domain_id
         auth_context['scope_domain_id'] = token.domain_id
+        auth_context['scope'] = 'domain'
     else:
         LOG.debug('RBAC: Proceeding without project or domain scope')
 
@@ -69,6 +71,7 @@ def token_to_auth_context(token):
         auth_context['trust_id'] = token.trust_id
         auth_context['trustor_id'] = token.trustor_user_id
         auth_context['trustee_id'] = token.trustee_user_id
+        auth_context['scope'] = 'trust'
     else:
         auth_context['trust_id'] = None
         auth_context['trustor_id'] = None
