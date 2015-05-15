@@ -42,6 +42,9 @@ region_update = {
 }
 
 _service_properties = {
+    'description': {
+        'type': ['string', 'null'],
+    },
     'enabled': parameter_types.boolean,
     'name': parameter_types.name,
     'type': {
