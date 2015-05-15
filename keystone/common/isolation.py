@@ -80,6 +80,10 @@ class IsolationRules(object):
         # role assignment
             "identity:list_role_assignments": "user_id:%(user.id)s or scope_id:%(scope.domain.id)s or scope_id:%(scope.project.id)s",
         # token
+            "identity:change_password": "",
+            "identity:check_token": "",
+            "identity:validate_token": "",
+            "identity:revocation_list": "",
             "identity:revoke_token": "user_id:%(target.token.user_id)s or scope_id:%(target.token.user.domain.id)s",
         # role
             "identity:get_role": "scope_domain_id:%(target.role.domain_id)s",
@@ -92,7 +96,12 @@ class IsolationRules(object):
             "identity:list_policies": "scope:domain and scope_id:%(domain_id)s",
             "identity:create_policy": "scope:domain and scope_id:%(policy.domain_id)s",
             "identity:update_policy": "scope:domain and scope_id:%(target.policy.domain_id)s",
-            "identity:delete_policy": "scope:domain and scope_id:%(target.policy.domain_id)s"
+            "identity:delete_policy": "scope:domain and scope_id:%(target.policy.domain_id)s",
+        # other
+            "identity:get_auth_catalog": "",
+            "identity:get_auth_projects": "",
+            "identity:get_auth_domains": "",
+            "identity:list_revoke_events": ""
         }
 
         # Next, we are going to point isol_dict to the result of parsed 
