@@ -1,6 +1,6 @@
 import sqlalchemy as sql
 
-_ENDPOINT_TABLE_NAME = 'service'
+_ENDPOINT_TABLE_NAME = 'endpoint'
 
 def upgrade(migrate_engine):
     meta = sql.MetaData()
