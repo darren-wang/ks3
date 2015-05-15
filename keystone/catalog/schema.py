@@ -77,9 +77,6 @@ _endpoint_properties = {
     'region_id': {
         'type': 'string'
     },
-    'region': {
-        'type': 'string'
-    },
     'service_id': {
         'type': 'string'
     },
