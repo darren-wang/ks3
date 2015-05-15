@@ -57,11 +57,12 @@ class Region(sql.ModelBase, sql.DictBase):
 
 class Service(sql.ModelBase, sql.DictBase):
     __tablename__ = 'service'
-    attributes = ['id', 'type', 'enabled']
+    attributes = ['id', 'type', 'enabled', 'description']
     id = sql.Column(sql.String(64), primary_key=True)
     type = sql.Column(sql.String(255))
     enabled = sql.Column(sql.Boolean, nullable=False, default=True,
                          server_default=sqlalchemy.sql.expression.true())
+    description = sql.Column(sql.String(255), nullable=False)
     extra = sql.Column(sql.JsonBlob())
     endpoints = sqlalchemy.orm.relationship("Endpoint", backref="service")
 
