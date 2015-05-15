@@ -69,6 +69,9 @@ service_update = {
 }
 
 _endpoint_properties = {
+    'description': {
+        'type': ['string', 'null'],
+    },
     'enabled': parameter_types.boolean,
     'interface': {
         'type': 'string',

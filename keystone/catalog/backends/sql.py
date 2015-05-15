@@ -70,7 +70,7 @@ class Service(sql.ModelBase, sql.DictBase):
 class Endpoint(sql.ModelBase, sql.DictBase):
     __tablename__ = 'endpoint'
     attributes = ['id', 'interface', 'region_id', 'service_id', 'url',
-                  'enabled']
+                  'enabled', 'description']
     id = sql.Column(sql.String(64), primary_key=True)
     interface = sql.Column(sql.String(8), nullable=False)
     region_id = sql.Column(sql.String(255),
@@ -84,6 +84,7 @@ class Endpoint(sql.ModelBase, sql.DictBase):
     url = sql.Column(sql.Text(), nullable=False)
     enabled = sql.Column(sql.Boolean, nullable=False, default=True,
                          server_default=sqlalchemy.sql.expression.true())
+    description = sql.Column(sql.String(255), nullable=False)
     extra = sql.Column(sql.JsonBlob())
 
 
