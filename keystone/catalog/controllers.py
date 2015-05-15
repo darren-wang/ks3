@@ -150,35 +150,10 @@ class EndpointV3(controller.V3Controller):
         ref = cls.filter_endpoint(ref)
         return super(EndpointV3, cls).wrap_member(context, ref)
 
-    def _validate_endpoint_region(self, endpoint, context=None):
-        """Ensure the region for the endpoint exists.
-
-        If 'region_id' is used to specify the region, then we will let the
-        manager/driver take care of this.  If, however, 'region' is used,
-        then for backward compatibility, we will auto-create the region.
-
-        """
-        if (endpoint.get('region_id') is None and
-                endpoint.get('region') is not None):
-            # To maintain backward compatibility with clients that are
-            # using the v3 API in the same way as they used the v2 API,
-            # create the endpoint region, if that region does not exist
-            # in keystone.
-            endpoint['region_id'] = endpoint.pop('region')
-            try:
-                self.catalog_api.get_region(endpoint['region_id'])
-            except exception.RegionNotFound:
-                region = dict(id=endpoint['region_id'])
-                initiator = notifications._get_request_audit_info(context)
-                self.catalog_api.create_region(region, initiator)
-
-        return endpoint
-
     @controller.protected()
     @validation.validated(schema.endpoint_create, 'endpoint')
     def create_endpoint(self, context, endpoint):
         ref = self._assign_unique_id(self._normalize_dict(endpoint))
-        ref = self._validate_endpoint_region(ref, context)
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.create_endpoint(ref['id'], ref, initiator)
         return EndpointV3.wrap_member(context, ref)
@@ -198,9 +173,6 @@ class EndpointV3(controller.V3Controller):
     @validation.validated(schema.endpoint_update, 'endpoint')
     def update_endpoint(self, context, endpoint_id, endpoint):
         self._require_matching_id(endpoint_id, endpoint)
-
-        endpoint = self._validate_endpoint_region(endpoint.copy(), context)
-
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.update_endpoint(endpoint_id, endpoint,
                                                initiator)
