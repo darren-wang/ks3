@@ -70,9 +70,8 @@ class Service(sql.ModelBase, sql.DictBase):
 class Endpoint(sql.ModelBase, sql.DictBase):
     __tablename__ = 'endpoint'
     attributes = ['id', 'interface', 'region_id', 'service_id', 'url',
-                  'legacy_endpoint_id', 'enabled']
+                  'enabled']
     id = sql.Column(sql.String(64), primary_key=True)
-    legacy_endpoint_id = sql.Column(sql.String(64))
     interface = sql.Column(sql.String(8), nullable=False)
     region_id = sql.Column(sql.String(255),
                            sql.ForeignKey('region.id',
@@ -300,7 +299,6 @@ class Catalog(catalog.Driver):
         def make_v3_endpoints(endpoints):
             for endpoint in (ep.to_dict() for ep in endpoints if ep.enabled):
                 del endpoint['service_id']
-                del endpoint['legacy_endpoint_id']
                 del endpoint['enabled']
                 endpoint['region'] = endpoint['region_id']
                 try:

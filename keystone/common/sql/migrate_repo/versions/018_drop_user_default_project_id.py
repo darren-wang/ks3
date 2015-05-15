@@ -7,5 +7,5 @@ def upgrade(migrate_engine):
     meta = sql.MetaData()
     meta.bind = migrate_engine
 
-    region_table = sql.Table(_USER_TABLE_NAME, meta, autoload=True)
-    region_table.drop_column('default_project_id')
+    user_table = sql.Table(_USER_TABLE_NAME, meta, autoload=True)
+    user_table.drop_column('default_project_id')
