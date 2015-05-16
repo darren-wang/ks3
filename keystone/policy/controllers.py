@@ -88,6 +88,14 @@ class PolicyV3(controller.V3Controller):
     @controller.protected()
     @validation.validated(schema.policy_update, 'policy')
     def update_policy(self, context, policy_id, policy):
+        try:
+            enabled = policy['enabled']
+            if enabled:
+                self._assert_domain_enabled_policy_num(
+                                                policy['domain_id'],
+                                                MaxEnabledPolicyNum)
+        except KeyError:
+            pass
         initiator = notifications._get_request_audit_info(context)
         ref = self.policy_api.update_policy(policy_id, policy, initiator)
         return PolicyV3.wrap_member(context, ref)
