@@ -111,7 +111,7 @@ def protected(callback=None):
                 creds = _build_policy_check_credentials(self, action,
                                                         context, kwargs)
 
-                policy_dict = {}
+                target = {}
 
                 # Check to see if we need to include the target entity in our
                 # policy checks.  We deduce this by seeing if the class has
@@ -122,7 +122,7 @@ def protected(callback=None):
                     key = '%s_id' % self.member_name
                     if key in kwargs:
                         ref = self.get_member_from_driver(kwargs[key])
-                        policy_dict['target'] = {self.member_name: ref}
+                        target['target'] = {self.member_name: ref}
 
                 # TODO(henry-nash): Move this entire code to a member
                 # method inside v3 Auth
@@ -131,30 +131,31 @@ def protected(callback=None):
                         token_id=context['subject_token_id'],
                         token_data=self.token_provider_api.validate_token(
                             context['subject_token_id']))
-                    policy_dict.setdefault('target', {})
-                    policy_dict['target'].setdefault(self.member_name, {})
-                    policy_dict['target'][self.member_name]['user_id'] = (
+                    target.setdefault('target', {})
+                    target['target'].setdefault(self.member_name, {})
+                    target['target'][self.member_name]['user_id'] = (
                         ks_token.user_id)
                     try:
                         user_domain_id = ks_token.user_domain_id
                     except exception.UnexpectedError:
                         user_domain_id = None
                     if user_domain_id:
-                        policy_dict['target'][self.member_name].setdefault(
+                        target['target'][self.member_name].setdefault(
                             'user', {})
-                        policy_dict['target'][self.member_name][
+                        target['target'][self.member_name][
                             'user'].setdefault('domain', {})
-                        policy_dict['target'][self.member_name]['user'][
+                        target['target'][self.member_name]['user'][
                             'domain']['id'] = (user_domain_id)
 
                 # Add in the kwargs, which means that any entity provided as a
                 # parameter for calls like create and update will be included.
-                policy_dict.update(kwargs)
+                target.update(kwargs)
+
                 # (Darren) System hard-coded isolation check 
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n')
                 self.policy_api.enforce(creds,
                                         action,
-                                        utils.flatten_dict(policy_dict),
+                                        utils.flatten_dict(target),
                                         rule_dict=_ISOLATION.isol_rules)
                 LOG.debug('\n####ISOLATION CHECK SUCCESS####\n\n')
                 
@@ -163,7 +164,7 @@ def protected(callback=None):
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
                                         action,
-                                        utils.flatten_dict(policy_dict))
+                                        utils.flatten_dict(target))
                 else:    
                     domain_rules = self.policy_api.list_policies_in_domain(
                                                             user_domain_id)
@@ -172,7 +173,7 @@ def protected(callback=None):
                     rule_dict = policy.Rules.from_dict(rule_dict)
                     self.policy_api.enforce(creds, 
                                         action,
-                                        utils.flatten_dict(policy_dict),
+                                        utils.flatten_dict(target),
                                         rule_dict=rule_dict)
                 LOG.debug('\n####RBAC CHECK SUCCESS####\n\n')
             return f(self, context, *args, **kwargs)
@@ -212,7 +213,7 @@ def filterprotected(*filters):
                 # Now any formal url parameters
                 for key in kwargs:
                     target[key] = kwargs[key]
-                
+
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n')
                 self.policy_api.enforce(creds,
                                         action,
