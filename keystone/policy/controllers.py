@@ -15,6 +15,7 @@
 from keystone.common import controller
 from keystone.common import dependency
 from keystone.common import validation
+from keystone import exception
 from keystone import notifications
 from keystone.policy import schema
 from oslo_log import log
@@ -23,18 +24,51 @@ from oslo_log import log
 LOG = log.getLogger(__name__)
 
 
+MaxPolicyNum = 3
+MaxEnabledPolicyNum = 1
+
+
 @dependency.requires('policy_api')
 class PolicyV3(controller.V3Controller):
     collection_name = 'policies'
     member_name = 'policy'
 
+    def __init__(self):
+        super(PolicyV3, self).__init__()
+        self.get_member_from_driver = self.policy_api.get_policy
+
+    def _assert_domain_policy_num(self, domain_id, num):
+        policy_refs = self.policy_api.list_policies_in_domain(
+                                                            domain_id)
+        policy_amount = len(policy_refs)
+        if policy_amount < num:
+            return
+        else:
+            raise exception.ForbiddenAction("Policy amount exceeded.")
+
+    def _assert_domain_enabled_policy_num(self, domain_id, num):
+        policy_refs = self.policy_api.list_enabled_policies_in_domain(
+                                                            domain_id)
+        policy_amount = len(policy_refs)
+        if policy_amount < num:
+            return
+        else:
+            raise exception.ForbiddenAction("Enabled "
+                                            "Policy amount exceeded.")
+
     @controller.protected()
     @validation.validated(schema.policy_create, 'policy')
     def create_policy(self, context, policy):
-        LOG.debug('\n###context passed to create_policy###\n' +
-                  str(context))
-        LOG.debug('\n###policy passed to create_policy:###\n' + 
-                  str(policy))
+        self._assert_domain_policy_num(policy['domain_id'],
+                                       MaxPolicyNum)
+        try:
+            enabled = policy['enabled']
+            if enabled:
+                self._assert_domain_enabled_policy_num(
+                                                policy['domain_id'],
+                                                MaxEnabledPolicyNum)
+        except KeyError:
+            pass
         ref = self._assign_unique_id(self._normalize_dict(policy))
         initiator = notifications._get_request_audit_info(context)
         ref = self.policy_api.create_policy(ref['id'], ref, initiator)

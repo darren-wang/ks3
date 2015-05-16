@@ -17,6 +17,7 @@
 import abc
 
 from oslo_config import cfg
+from oslo_log import log
 import six
 
 from keystone.common import dependency
@@ -26,6 +27,7 @@ from keystone import exception
 from keystone import notifications
 
 
+LOG = log.getLogger(__name__)
 CONF = cfg.CONF
 
 
@@ -92,6 +94,13 @@ class Manager(manager.Manager):
         except exception.DomainNotFound:
             raise
         return self.driver.list_policies_in_domain(domain_id)
+    
+    def list_enabled_policies_in_domain(self, domain_id):
+        try:
+            self.resource_api.get_domain(domain_id)
+        except exception.DomainNotFound:
+            raise
+        return self.driver.list_enabled_policies_in_domain(domain_id)
 
 @six.add_metaclass(abc.ABCMeta)
 class Driver(object):

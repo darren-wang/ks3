@@ -19,7 +19,7 @@ from keystone.policy.backends import rules
 
 class PolicyModel(sql.ModelBase, sql.DictBase):
     __tablename__ = 'policy'
-    attributes = ['id', 'blob', 'type', 'name', 'enabled'
+    attributes = ['id', 'blob', 'type', 'name', 'enabled',
                   'description', 'domain_id']
     id = sql.Column(sql.String(64), primary_key=True)
     blob = sql.Column(sql.JsonBlob(), nullable=False)
@@ -75,6 +75,13 @@ class Policy(rules.Policy):
             # does exist. And we shouldn't rely on other backends here. 
             query = session.query(PolicyModel)
             policy_refs = query.filter_by(domain_id=domain_id)
+            return [policy_ref.to_dict() for policy_ref in policy_refs]
+    
+    def list_enabled_policies_in_domain(self, domain_id):
+        with sql.transaction() as session:
+            query = session.query(PolicyModel)
+            policy_refs = query.filter_by(domain_id=domain_id,
+                                          enabled=True)
             return [policy_ref.to_dict() for policy_ref in policy_refs]
 
     def _get_policy(self, session, policy_id):
