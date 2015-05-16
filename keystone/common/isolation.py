@@ -51,7 +51,7 @@ class IsolationRules(object):
             "identity:list_user_projects": "user_id:%(user_id)s or (scope:domain and scope_id:%(domain_id)s)",
             "identity:create_project": "scope:domain and scope_id:%(project.domain_id)s",
             "identity:get_project": "(scope:domain and scope_id:%(target.project.domain_id)s) or (scope:project and scope_id:%(target.project.id)s)",
-            "identity:update_project": "(scope:domain and scope_id:%(target.project.domain_id)s) or (scope:project and scope_id:%(target.project.id)s)",
+            "identity:update_project": "(scope:domain and scope_id:%(target.project.domain_id)s and scope_id:%(project.domain_id)s) or (scope:project and scope_id:%(target.project.id)s and scope_domain_id:%(project.domain_id)s)",
             "identity:delete_project": "scope:domain and scope_id:%(target.project.domain_id)s",
         # user    
             "identity:list_users": "scope:domain and scope_id:%(domain_id)s",
@@ -89,7 +89,7 @@ class IsolationRules(object):
             "identity:get_role": "scope_domain_id:%(target.role.domain_id)s",
             "identity:list_roles": "scope_domain_id:%(domain_id)s",
             "identity:create_role": "scope:domain and scope_id:%(role.domain_id)s",
-            "identity:update_role": "scope:domain and scope_id:%(target.role.domain_id)s",
+            "identity:update_role": "scope:domain and scope_id:%(target.role.domain_id)s and scope_id:%(role.domain_id)s",
             "identity:delete_role": "scope:domain and scope_id:%(target.role.domain_id)s",
         # policy
             "identity:get_policy": "scope:domain and scope_id:%(target.policy.domain_id)s",
