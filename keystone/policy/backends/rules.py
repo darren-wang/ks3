@@ -69,7 +69,9 @@ def enforce(credentials, action, target, rule_dict=None, do_raise=True):
         extra.update(exc=exception.ForbiddenAction, action=action,
                      do_raise=do_raise)
 
-    return _ENFORCER.enforce(action, target, credentials, **extra)
+    return _ENFORCER.enforce(action, target, credentials,
+                             rule_dict=rule_dict,
+                             **extra)
 
 
 class Policy(policy.Driver):
