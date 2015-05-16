@@ -17,6 +17,10 @@ from keystone.common import dependency
 from keystone.common import validation
 from keystone import notifications
 from keystone.policy import schema
+from oslo_log import log
+
+
+LOG = log.getLogger(__name__)
 
 
 @dependency.requires('policy_api')
@@ -27,6 +31,10 @@ class PolicyV3(controller.V3Controller):
     @controller.protected()
     @validation.validated(schema.policy_create, 'policy')
     def create_policy(self, context, policy):
+        LOG.debug('\n###context passed to create_policy###\n' +
+                  str(context))
+        LOG.debug('\n###policy passed to create_policy:###\n' + 
+                  str(policy))
         ref = self._assign_unique_id(self._normalize_dict(policy))
         initiator = notifications._get_request_audit_info(context)
         ref = self.policy_api.create_policy(ref['id'], ref, initiator)
