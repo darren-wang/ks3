@@ -33,7 +33,7 @@ class Region(sql.ModelBase, sql.DictBase):
     __tablename__ = 'region'
     attributes = ['id', 'description', 'parent_region_id']
     id = sql.Column(sql.String(255), primary_key=True)
-    description = sql.Column(sql.String(255), nullable=False)
+    description = sql.Column(sql.String(255), nullable=True)
     # NOTE(jaypipes): Right now, using an adjacency list model for
     #                 storing the hierarchy of regions is fine, since
     #                 the API does not support any kind of querying for
@@ -62,7 +62,7 @@ class Service(sql.ModelBase, sql.DictBase):
     type = sql.Column(sql.String(255))
     enabled = sql.Column(sql.Boolean, nullable=False, default=True,
                          server_default=sqlalchemy.sql.expression.true())
-    description = sql.Column(sql.String(255), nullable=False)
+    description = sql.Column(sql.String(255), nullable=True)
     extra = sql.Column(sql.JsonBlob())
     endpoints = sqlalchemy.orm.relationship("Endpoint", backref="service")
 
@@ -84,7 +84,7 @@ class Endpoint(sql.ModelBase, sql.DictBase):
     url = sql.Column(sql.Text(), nullable=False)
     enabled = sql.Column(sql.Boolean, nullable=False, default=True,
                          server_default=sqlalchemy.sql.expression.true())
-    description = sql.Column(sql.String(255), nullable=False)
+    description = sql.Column(sql.String(255), nullable=True)
     extra = sql.Column(sql.JsonBlob())
 
 

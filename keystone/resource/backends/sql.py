@@ -235,10 +235,11 @@ class Resource(keystone_resource.Driver):
 
 class Domain(sql.ModelBase, sql.DictBase):
     __tablename__ = 'domain'
-    attributes = ['id', 'name', 'enabled']
+    attributes = ['id', 'name', 'enabled', 'description']
     id = sql.Column(sql.String(64), primary_key=True)
     name = sql.Column(sql.String(64), nullable=False)
     enabled = sql.Column(sql.Boolean, default=True, nullable=False)
+    description = sql.Column(sql.Text(), nullable=True)
     extra = sql.Column(sql.JsonBlob())
     __table_args__ = (sql.UniqueConstraint('name'), {})
 
