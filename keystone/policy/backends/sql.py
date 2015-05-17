@@ -19,11 +19,10 @@ from keystone.policy.backends import rules
 
 class PolicyModel(sql.ModelBase, sql.DictBase):
     __tablename__ = 'policy'
-    attributes = ['id', 'blob', 'type', 'name', 'enabled',
+    attributes = ['id', 'blob', 'name', 'enabled',
                   'description', 'domain_id']
     id = sql.Column(sql.String(64), primary_key=True)
     blob = sql.Column(sql.JsonBlob(), nullable=False)
-    type = sql.Column(sql.String(255), nullable=False)
     name = sql.Column(sql.String(64), nullable=False)
     domain_id = sql.Column(sql.String(64), sql.ForeignKey('domain.id'),
                            nullable=False)

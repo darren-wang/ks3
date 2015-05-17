@@ -22,10 +22,6 @@ _policy_properties = {
     'blob': {
         'type': 'string'
     },
-    'type': {
-        'type': 'string',
-        'maxLength': 255
-    },
     'description': validation.nullable(parameter_types.description),
     'domain_id': parameter_types.id_string,
     'enabled': parameter_types.boolean,
@@ -34,7 +30,7 @@ _policy_properties = {
 policy_create = {
     'type': 'object',
     'properties': _policy_properties,
-    'required': ['blob', 'type', 'domain_id', 'name'],
+    'required': ['blob', 'domain_id', 'name'],
     'additionalProperties': True
 }
 
