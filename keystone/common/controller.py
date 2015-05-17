@@ -160,6 +160,8 @@ def protected(callback=None):
 
                 LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
                 user_domain_id = creds['scope_domain_id']
+                # admin domain's policy is loaded from policy file, while
+                # common domain's loaded from DB.
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
                                         action,
@@ -168,7 +170,7 @@ def protected(callback=None):
                     domain_rules = self.policy_api.list_enabled_policies_in_domain(
                                                         user_domain_id)
                     if len(domain_rules)>0:
-                    # Assume policy are written in JSON
+                    # (darren) Now, only support json
                         rule_dict = jsonutils.loads(domain_rules[0]['blob'])
                         # (darren) If common domain's admin forget to set a 
                         # default rule for the actions not listed in the 
@@ -224,12 +226,13 @@ def filterprotected(*filters):
                 for key in kwargs:
                     target[key] = kwargs[key]
 
+                LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
                 self.policy_api.enforce(creds,
                                         action,
                                         utils.flatten_dict(target),
                                         rule_dict=_ISOLATION.isol_rules)
-                LOG.debug('\n####ISOLATION CHECK SUCCESS####\n\n')
 
+                LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.identity.admin_domain_id:
                     self.policy_api.enforce(creds,
@@ -253,7 +256,6 @@ def filterprotected(*filters):
                                         utils.flatten_dict(target),
                                         rule_dict=_ISOLATION.default_rbac)
 
-                LOG.debug('\n####RBAC CHECK SUCCESS####\n\n')
             else:
                 LOG.warning(_LW('RBAC: Bypassing authorization'))
             return f(self, context, filters, **kwargs)
