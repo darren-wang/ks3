@@ -135,6 +135,7 @@ class GroupV3(controller.V3Controller):
         self.get_member_from_driver = self.identity_api.get_group
 
     @controller.protected()
+    @validation.validated(schema.group_create, 'group')
     def create_group(self, context, group):
         self._require_attribute(group, 'name')
 
@@ -165,6 +166,7 @@ class GroupV3(controller.V3Controller):
         return GroupV3.wrap_member(context, ref)
 
     @controller.protected()
+    @validation.validated(schema.group_update, 'group')
     def update_group(self, context, group_id, group):
         self._require_matching_id(group_id, group)
         self._require_matching_domain_id(
