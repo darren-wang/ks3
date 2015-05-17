@@ -21,7 +21,7 @@ class IsolationRules(object):
             # so if an action isn't found in this dict, it is in the charge
             # of RBAC enforcer.
             "default": "@",  
-            "admin_domain": "domain_id:" + CONF.identity.admin_domain_id,
+            "admin_domain": "scope:domain and scope_id:" + CONF.identity.admin_domain_id,
         # region
             "identity:list_regions": "",
             "identity:get_region": "",
@@ -80,7 +80,7 @@ class IsolationRules(object):
         # role assignment
             "identity:list_role_assignments": "user_id:%(user.id)s or scope_id:%(scope.domain.id)s or scope_id:%(scope.project.id)s",
         # token
-            "identity:change_password": "",
+            "identity:change_password": "user_id:%(target.user.id)s",
             "identity:check_token": "",
             "identity:validate_token": "",
             "identity:revocation_list": "",
@@ -103,8 +103,11 @@ class IsolationRules(object):
             "identity:get_auth_domains": "",
             "identity:list_revoke_events": ""
         }
+        
+        self.default_rbac = {"default": "@"}
 
         # Next, we are going to point isol_dict to the result of parsed 
         # dict above, the dict above will no longer occupy memory since
         # it's no longer referenced.
         self.isol_rules = common_policy.Rules.from_dict(self.isol_rules, 'default')
+        self.default_rbac = common_policy.Rules.from_dict(self.default_rbac, 'default')

@@ -54,7 +54,7 @@ class Policy(rules.Policy):
         else:
             with sql.transaction() as session:
                 query = session.query(PolicyModel)
-                query = query.filter(PolicyModel.id.in_(ids))
+                query = query.filter(PolicyModel.id.in_(policy_ids))
                 return [policy_ref.to_dict() for policy_ref in query.all()]
 
     def list_policies_ids_from_domain_ids(self, domain_ids):
