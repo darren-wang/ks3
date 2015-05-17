@@ -99,6 +99,8 @@ class RoleV3(controller.V3Controller):
     @validation.validated(schema.role_update, 'role')
     def update_role(self, context, role_id, role):
         self._require_matching_id(role_id, role)
+        self._require_matching_domain_id(
+            role_id, role, self.role_api.get_role)
         initiator = notifications._get_request_audit_info(context)
         ref = self.role_api.update_role(role_id, role, initiator)
         return RoleV3.wrap_member(context, ref)

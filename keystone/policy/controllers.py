@@ -88,6 +88,10 @@ class PolicyV3(controller.V3Controller):
     @controller.protected()
     @validation.validated(schema.policy_update, 'policy')
     def update_policy(self, context, policy_id, policy):
+        self._require_matching_id(policy_id, policy)
+        self._require_matching_domain_id(
+            policy_id, policy, self.policy_api.get_policy)
+
         policy_ref = self.policy_api.get_policy(policy_id)
         domain_id = policy_ref['domain_id']
         try:
