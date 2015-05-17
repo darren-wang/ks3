@@ -16,6 +16,7 @@
 """Workflow Logic the Resource service."""
 
 import uuid
+import base64
 
 from oslo_config import cfg
 from oslo_log import log
@@ -34,7 +35,8 @@ CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
-@dependency.requires('resource_api')
+@dependency.requires('resource_api', 'identity_api', 'role_api',
+                     'assignment_api')
 class DomainV3(controller.V3Controller):
     collection_name = 'domains'
     member_name = 'domain'
@@ -43,13 +45,46 @@ class DomainV3(controller.V3Controller):
         super(DomainV3, self).__init__()
         self.get_member_from_driver = self.resource_api.get_domain
 
+    def _create_init_user(self, domain_id, initiator):
+        init_pass = base64.urlsafe_b64encode(uuid.uuid4().hex[:18])
+        init_user = {
+         'name': 'domain_admin',
+         'domain_id': domain_id,
+         'password': init_pass,
+         'description': 'Initial user of domain: %s.' %domain_id,
+         'enabled':True
+         }
+        ref = self.identity_api.create_user(init_user, initiator)
+        ref.update({'password':init_pass})
+        return {'user':ref}
+    
+    def _create_init_role(self, domain_id, initiator):
+        init_role_id = uuid.uuid4().hex
+        init_role = {
+         'name':'admin',
+         'id': init_role_id,
+         'domain_id':domain_id,
+         'description': 'Initial role of domain: %s' %domain_id
+         }
+        ref = self.role_api.create_role(init_role_id, init_role,
+                                        initiator)
+        return {'role':ref}
+        
     @controller.protected()
     @validation.validated(schema.domain_create, 'domain')
     def create_domain(self, context, domain):
         ref = self._assign_unique_id(self._normalize_dict(domain))
         initiator = notifications._get_request_audit_info(context)
         ref = self.resource_api.create_domain(ref['id'], ref, initiator)
-        return DomainV3.wrap_member(context, ref)
+        domain_ref = DomainV3.wrap_member(context, ref)
+        user_ref = self._create_init_user(ref['id'], initiator)
+        role_ref = self._create_init_role(ref['id'], initiator)
+        self.assignment_api.create_grant(role_ref['role']['id'],
+                                    user_id=user_ref['user']['id'],
+                                    domain_id=domain_ref['domain']['id'])
+        domain_ref.update(user_ref)
+        domain_ref.update(role_ref)
+        return domain_ref
 
     @controller.filterprotected('enabled', 'name')
     def list_domains(self, context, filters):
