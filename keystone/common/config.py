@@ -16,7 +16,7 @@ from oslo_config import cfg
 import oslo_messaging
 
 
-_DEFAULT_AUTH_METHODS = ['external', 'password', 'token', 'oauth1']
+_DEFAULT_AUTH_METHODS = ['external', 'password', 'token']
 _CERTFILE = '/etc/keystone/ssl/certs/signing_cert.pem'
 _KEYFILE = '/etc/keystone/ssl/private/signing_key.pem'
 _SSO_CALLBACK = '/etc/keystone/sso_callback_template.html'

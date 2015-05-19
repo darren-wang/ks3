@@ -101,7 +101,26 @@ class IsolationRules(object):
             "identity:get_auth_catalog": "",
             "identity:get_auth_projects": "",
             "identity:get_auth_domains": "",
-            "identity:list_revoke_events": ""
+            "identity:list_revoke_events": "",
+        # Glance Related
+            "image:add_image": "",
+            "image:delete_image": "",
+            "image:get_image": "",
+            "image:get_images": "",
+            "image:modify_image": "",
+            "image:publicize_image": "",
+            "image:copy_from": "",
+            "image:download_image": "",
+            "image:upload_image": "",
+            "image:set_image_location": "",
+            "image:get_image_location": "",
+            "image:delete_image_location": "",
+            "image:add_member": "",
+            "image:delete_member": "",
+            "image:get_member": "",
+            "image:get_members": "",
+            "image:modify_member": "",
+            "image:manage_image_cache": ""
         }
         
         self.default_rbac = {"default": "@"}
