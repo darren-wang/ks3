@@ -1,11 +1,3 @@
-from oslo_config import cfg
-from oslo_log import log
-from oslo_policy import policy as common_policy
-
-
-CONF = cfg.CONF
-LOG = log.getLogger(__name__)
-
 # This dict is unusable due to following reasons:
 # 1. It's just my expectation to have isolation in this way, the attributes used
 # in this dict are not tested, every operation needs to be tested in the official
@@ -13,7 +5,7 @@ LOG = log.getLogger(__name__)
 # 2. Even the attributes are available, the rules defined here may not be enough
 # to provide desirable domain(tenant) isolation.
 class IsolationRules(object):
-    def __init__(self):
+    def __init__(self, conf):
         self.isol_rules = {
         # generic
             # The Syetem developer must ensure that: All the actions need
@@ -21,7 +13,7 @@ class IsolationRules(object):
             # so if an action isn't found in this dict, it is in the charge
             # of RBAC enforcer.
             "default": "@",  
-            "admin_domain": "scope:domain and scope_id:" + CONF.identity.admin_domain_id,
+            "admin_domain": "scope:domain and scope_id:" + conf.identity.admin_domain_id,
         # region
             "identity:list_regions": "",
             "identity:get_region": "",
@@ -122,11 +114,3 @@ class IsolationRules(object):
             "image:modify_member": "",
             "image:manage_image_cache": ""
         }
-        
-        self.default_rbac = {"default": "@"}
-
-        # Next, we are going to point isol_dict to the result of parsed 
-        # dict above, the dict above will no longer occupy memory since
-        # it's no longer referenced.
-        self.isol_rules = common_policy.Rules.from_dict(self.isol_rules, 'default')
-        self.default_rbac = common_policy.Rules.from_dict(self.default_rbac, 'default')
