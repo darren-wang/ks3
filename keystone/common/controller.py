@@ -94,7 +94,9 @@ def protected(callback=None):
                 action = 'identity:%s' % f.__name__
                 creds = _build_policy_check_credentials(self, action,
                                                         context, kwargs)
-
+                # get user's domain_id despite how she's scoped.
+                user_domain_id = creds['scope_domain_id']
+                
                 target = {}
 
                 # Check to see if we need to include the target entity in our
@@ -134,51 +136,21 @@ def protected(callback=None):
                 # Add in the kwargs, which means that any entity provided as a
                 # parameter for calls like create and update will be included.
                 target.update(kwargs)
+                target = utils.flatten_dict(target)
                 
-                LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
-                # (Darren) Isolation Check
-                self.policy_api.enforce(action,
-                                        utils.flatten_dict(target),
-                                        creds,
-                                        isolation=True)
+                # Isolation check
+                self.policy_api.enforce(action, target, creds,
+                                        check_type='isolation')
 
-                LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
-                user_domain_id = creds['scope_domain_id']
-                # admin domain's policy is loaded from policy file, while
-                # common domain's loaded from DB.
                 if user_domain_id == CONF.oslo_policy.admin_domain_id:
-                    self.policy_api.enforce(action,
-                                            utils.flatten_dict(target),
-                                            creds)
+                    # admin domain's RBAC policy is loaded from policy file
+                    self.policy_api.enforce(action, target, creds,
+                                            check_type='admin_domain')
                 else:
-                    domain_rules = self.policy_api.enabled_policies_in_domain(
-                                                        user_domain_id)
-                    if len(domain_rules)>0:
-                    # (darren) Now, only support json
-                        rule_dict = jsonutils.loads(domain_rules[0]['blob'])
-                        # (darren) If common domain's admin forget to set a 
-                        # default rule for the actions not listed in the 
-                        # enabled policy, we will add one in order to ensure
-                        # correctness
-                        if 'default' not in rule_dict:
-                            rule_dict.update({'default':'role:admin'})
-                        rule_dict = policy.Rules.from_dict(rule_dict,
-                                                           'default')
-                        self.policy_api.enforce(action,
-                                                utils.flatten_dict(target),
-                                                creds,
-                                                rule_dict=rule_dict)
-                    else:
-                        LOG.warning('Tenant Domain has no enabled policy, '
-                                    'authorization granted. Please upload '
-                                    'policy to enforce RBAC in your domain.')
-                        rule_dict = {'default':'role:admin'}
-                        rule_dict = policy.Rules.from_dict(rule_dict,
-                                                           'default')
-                        self.policy_api.enforce(action,
-                                                utils.flatten_dict(target),
-                                                creds,
-                                                rule_dict=rule_dict)
+                    # tenant domain's RBAC policy is loaded from DB
+                    self.policy_api.enforce(action, target, creds,
+                                            check_type=user_domain_id)
+
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
@@ -196,6 +168,8 @@ def filterprotected(*filters):
                 creds = _build_policy_check_credentials(self,
                                                         action,
                                                         context, kwargs)
+                user_domain_id = creds['scope_domain_id']
+                
                 # Now, build the target dict for policy check.  We include:
                 #
                 # - Any query filter parameters
@@ -217,44 +191,19 @@ def filterprotected(*filters):
                 # Now any formal url parameters
                 for key in kwargs:
                     target[key] = kwargs[key]
+                target = utils.flatten_dict(target)
 
-                LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
-                self.policy_api.enforce(action,
-                                        utils.flatten_dict(target),
-                                        creds,
-                                        isolation=True)
+                # Isolation check
+                self.policy_api.enforce(action, target, creds,
+                                        check_type='isolation')
 
-                LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
-                user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.oslo_policy.admin_domain_id:
-                    self.policy_api.enforce(action,
-                                            utils.flatten_dict(target),
-                                            creds)
-                else:    
-                    domain_rules = self.policy_api.enabled_policies_in_domain(
-                                                            user_domain_id)
-                    if len(domain_rules)>0:
-                        # Assume policy are written in JSON
-                        rule_dict = jsonutils.loads(domain_rules[0]['blob'])
-                        if 'default' not in rule_dict:
-                            rule_dict.update({'default':'role:admin'})
-                        rule_dict = policy.Rules.from_dict(rule_dict,
-                                                           'default')
-                        self.policy_api.enforce(action,
-                                                utils.flatten_dict(target),
-                                                creds, 
-                                                rule_dict=rule_dict)
-                    else:
-                        LOG.warning('Tenant Domain has no enabled policy, '
-                                    'authorization granted. Please upload '
-                                    'policy to enforce RBAC in your domain.')
-                        rule_dict = {'default':'role:admin'}
-                        rule_dict = policy.Rules.from_dict(rule_dict,
-                                                           'default')
-                        self.policy_api.enforce(action,
-                                                utils.flatten_dict(target),
-                                                creds,
-                                                rule_dict=rule_dict)
+                    self.policy_api.enforce(action, target, creds,
+                                            check_type='admin_domain')
+                else:
+                    self.policy_api.enforce(action, target, creds,
+                                            check_type=user_domain_id)
+
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected
