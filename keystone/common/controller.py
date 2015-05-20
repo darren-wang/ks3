@@ -138,8 +138,8 @@ def protected(callback=None):
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
                 # (Darren) Isolation Check
                 self.policy_api.enforce(creds, action,
-                                        isolation=True,
-                                        utils.flatten_dict(target))
+                                        utils.flatten_dict(target),
+                                        isolation=True)
 
                 LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
                 user_domain_id = creds['scope_domain_id']
@@ -216,8 +216,8 @@ def filterprotected(*filters):
 
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
                 self.policy_api.enforce(creds, action,
-                                        isolation=True,
-                                        utils.flatten_dict(target))
+                                        utils.flatten_dict(target),
+                                        isolation=True)
 
                 LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
                 user_domain_id = creds['scope_domain_id']
