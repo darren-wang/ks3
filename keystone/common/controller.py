@@ -137,9 +137,9 @@ def protected(callback=None):
                 
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
                 # (Darren) Isolation Check
-                self.policy_api.enforce(creds,
-                                        action,
+                self.policy_api.enforce(action,
                                         utils.flatten_dict(target),
+                                        creds,
                                         isolation=True)
 
                 LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
@@ -147,9 +147,9 @@ def protected(callback=None):
                 # admin domain's policy is loaded from policy file, while
                 # common domain's loaded from DB.
                 if user_domain_id == CONF.oslo_policy.admin_domain_id:
-                    self.policy_api.enforce(creds,
-                                            action,
-                                            utils.flatten_dict(target))
+                    self.policy_api.enforce(action,
+                                            utils.flatten_dict(target),
+                                            creds)
                 else:
                     domain_rules = self.policy_api.list_enabled_policies_in_domain(
                                                         user_domain_id)
@@ -164,9 +164,9 @@ def protected(callback=None):
                             rule_dict.update({'default':'role:admin'})
                         rule_dict = policy.Rules.from_dict(rule_dict,
                                                            'default')
-                        self.policy_api.enforce(creds,
-                                                action,
+                        self.policy_api.enforce(action,
                                                 utils.flatten_dict(target),
+                                                creds,
                                                 rule_dict=rule_dict)
                     else:
                         LOG.warning('Tenant Domain has no enabled policy, '
@@ -175,9 +175,9 @@ def protected(callback=None):
                         rule_dict = {'default':'role:admin'}
                         rule_dict = policy.Rules.from_dict(rule_dict,
                                                            'default')
-                        self.policy_api.enforce(creds,
-                                                action,
+                        self.policy_api.enforce(action,
                                                 utils.flatten_dict(target),
+                                                creds,
                                                 rule_dict=rule_dict)
             return f(self, context, *args, **kwargs)
         return inner
@@ -190,7 +190,9 @@ def filterprotected(*filters):
     def _filterprotected(f):
         @functools.wraps(f)
         def wrapper(self, context, **kwargs):
-            if not context['is_admin']:
+            if 'is_admin' in context and context['is_admin']:
+                LOG.warning(_LW('RBAC: Bypassing authorization'))
+            else:
                 action = 'identity:%s' % f.__name__
                 creds = _build_policy_check_credentials(self,
                                                         action,
@@ -218,17 +220,17 @@ def filterprotected(*filters):
                     target[key] = kwargs[key]
 
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
-                self.policy_api.enforce(creds,
-                                        action,
+                self.policy_api.enforce(action,
                                         utils.flatten_dict(target),
+                                        creds,
                                         isolation=True)
 
                 LOG.debug('\n####RBAC CHECK BEGINS####\n\n')
                 user_domain_id = creds['scope_domain_id']
                 if user_domain_id == CONF.oslo_policy.admin_domain_id:
-                    self.policy_api.enforce(creds,
-                                            action,
-                                            utils.flatten_dict(target))
+                    self.policy_api.enforce(action,
+                                            utils.flatten_dict(target),
+                                            creds)
                 else:    
                     domain_rules = self.policy_api.list_enabled_policies_in_domain(
                                                             user_domain_id)
@@ -239,9 +241,9 @@ def filterprotected(*filters):
                             rule_dict.update({'default':'role:admin'})
                         rule_dict = policy.Rules.from_dict(rule_dict,
                                                            'default')
-                        self.policy_api.enforce(creds, 
-                                                action,
+                        self.policy_api.enforce(action,
                                                 utils.flatten_dict(target),
+                                                creds, 
                                                 rule_dict=rule_dict)
                     else:
                         LOG.warning('Tenant Domain has no enabled policy, '
@@ -250,12 +252,11 @@ def filterprotected(*filters):
                         rule_dict = {'default':'role:admin'}
                         rule_dict = policy.Rules.from_dict(rule_dict,
                                                            'default')
-                        self.policy_api.enforce(creds,
-                                                action,
+                        self.policy_api.enforce(action,
                                                 utils.flatten_dict(target),
+                                                creds,
                                                 rule_dict=rule_dict)
-            else:
-                LOG.warning(_LW('RBAC: Bypassing authorization'))
+
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected

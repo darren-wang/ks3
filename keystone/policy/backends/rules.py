@@ -40,7 +40,7 @@ def init():
         _ENFORCER = common_policy.Enforcer(CONF)
 
 
-def enforce(credentials, action, target, isolation=False,
+def enforce(action, target, credentials, isolation=False,
             rule_dict=None, do_raise=True):
     """Verifies that the action is valid on the target in this context.
 
@@ -81,7 +81,7 @@ def enforce(credentials, action, target, isolation=False,
 
 class Policy(policy.Driver):
 
-    def enforce(self, credentials, action, target, isolation=False,
+    def enforce(self, action, target, credentials, isolation=False,
                 rule_dict=None):
         LOG.debug('API protection:\nSUBJECT\n\t%(credentials)s \nACT'
         '\n\taction: %(action)s\nON\n\ttarget: %(target)s\n'
@@ -90,8 +90,7 @@ class Policy(policy.Driver):
             'credentials': credentials,
             'target':target,
             'isolation':isolation})
-        enforce(credentials, action, target,
-                isolation=isolation,
+        enforce(action, target, credentials, isolation=isolation,
                 rule_dict=rule_dict)
 
     def create_policy(self, policy_id, policy):
