@@ -186,7 +186,6 @@ def protected(callback=None):
 
 def filterprotected(*filters):
     """Wraps filtered API calls with role based access controls (RBAC)."""
-
     def _filterprotected(f):
         @functools.wraps(f)
         def wrapper(self, context, **kwargs):
@@ -256,7 +255,6 @@ def filterprotected(*filters):
                                                 utils.flatten_dict(target),
                                                 creds,
                                                 rule_dict=rule_dict)
-
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected
