@@ -139,15 +139,18 @@ def protected(callback=None):
                 target = utils.flatten_dict(target)
                 
                 # Isolation check
+                LOG.debug('Isolation check.')
                 self.policy_api.enforce(action, target, creds,
                                         check_type='isolation')
 
                 if user_domain_id == CONF.oslo_policy.admin_domain_id:
                     # admin domain's RBAC policy is loaded from policy file
+                    LOG.debug('Target domain is the admin domain.')
                     self.policy_api.enforce(action, target, creds,
                                             check_type='admin_domain')
                 else:
                     # tenant domain's RBAC policy is loaded from DB
+                    LOG.debug('Target domain is a tenant domain.')
                     self.policy_api.enforce(action, target, creds,
                                             check_type=user_domain_id)
 
@@ -194,13 +197,16 @@ def filterprotected(*filters):
                 target = utils.flatten_dict(target)
 
                 # Isolation check
+                LOG.debug('Isolation check.')
                 self.policy_api.enforce(action, target, creds,
                                         check_type='isolation')
 
                 if user_domain_id == CONF.oslo_policy.admin_domain_id:
+                    LOG.debug('Target domain is the admin domain.')
                     self.policy_api.enforce(action, target, creds,
                                             check_type='admin_domain')
                 else:
+                    LOG.debug('Target domain is a tenant domain.')
                     self.policy_api.enforce(action, target, creds,
                                             check_type=user_domain_id)
 
