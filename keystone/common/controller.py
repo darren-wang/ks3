@@ -151,7 +151,7 @@ def protected(callback=None):
                                             utils.flatten_dict(target),
                                             creds)
                 else:
-                    domain_rules = self.policy_api.list_enabled_policies_in_domain(
+                    domain_rules = self.policy_api.enabled_policies_in_domain(
                                                         user_domain_id)
                     if len(domain_rules)>0:
                     # (darren) Now, only support json
@@ -231,7 +231,7 @@ def filterprotected(*filters):
                                             utils.flatten_dict(target),
                                             creds)
                 else:    
-                    domain_rules = self.policy_api.list_enabled_policies_in_domain(
+                    domain_rules = self.policy_api.enabled_policies_in_domain(
                                                             user_domain_id)
                     if len(domain_rules)>0:
                         # Assume policy are written in JSON

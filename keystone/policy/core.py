@@ -95,12 +95,12 @@ class Manager(manager.Manager):
             raise
         return self.driver.list_policies_in_domain(domain_id)
     
-    def list_enabled_policies_in_domain(self, domain_id):
+    def enabled_policies_in_domain(self, domain_id):
         try:
             self.resource_api.get_domain(domain_id)
         except exception.DomainNotFound:
             raise
-        return self.driver.list_enabled_policies_in_domain(domain_id)
+        return self.driver.enabled_policies_in_domain(domain_id)
 
 @six.add_metaclass(abc.ABCMeta)
 class Driver(object):
