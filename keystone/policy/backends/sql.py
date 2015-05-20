@@ -29,6 +29,7 @@ class PolicyModel(sql.ModelBase, sql.DictBase):
     enabled = sql.Column(sql.Boolean, default=False, nullable=False)
     description = sql.Column(sql.Text())
     extra = sql.Column(sql.JsonBlob())
+    __table_args__ = (sql.UniqueConstraint('domain_id', 'name'), {})
 
 
 class Policy(rules.Policy):
