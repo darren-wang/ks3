@@ -84,11 +84,14 @@ class Policy(policy.Driver):
     def enforce(self, credentials, action, target, isolation=False,
                 rule_dict=None):
         LOG.debug('API protection:\nSUBJECT\n\t%(credentials)s \nACT'
-        '\n\taction: %(action)s\nON\n\ttarget: %(target)s\n', {
+        '\n\taction: %(action)s\nON\n\ttarget: %(target)s\n'
+        'isolation: %(isolation)s\n', {
             'action': action,
             'credentials': credentials,
-            'target':target})
-        enforce(credentials, action, target, isolation=isolation,
+            'target':target,
+            'isolation':isolation})
+        enforce(credentials, action, target,
+                isolation=isolation,
                 rule_dict=rule_dict)
 
     def create_policy(self, policy_id, policy):
