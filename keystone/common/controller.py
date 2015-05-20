@@ -137,7 +137,8 @@ def protected(callback=None):
                 
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
                 # (Darren) Isolation Check
-                self.policy_api.enforce(creds, action,
+                self.policy_api.enforce(creds,
+                                        action,
                                         utils.flatten_dict(target),
                                         isolation=True)
 
@@ -163,7 +164,8 @@ def protected(callback=None):
                             rule_dict.update({'default':'role:admin'})
                         rule_dict = policy.Rules.from_dict(rule_dict,
                                                            'default')
-                        self.policy_api.enforce(creds, action,
+                        self.policy_api.enforce(creds,
+                                                action,
                                                 utils.flatten_dict(target),
                                                 rule_dict=rule_dict)
                     else:
@@ -190,7 +192,8 @@ def filterprotected(*filters):
         def wrapper(self, context, **kwargs):
             if not context['is_admin']:
                 action = 'identity:%s' % f.__name__
-                creds = _build_policy_check_credentials(self, action,
+                creds = _build_policy_check_credentials(self,
+                                                        action,
                                                         context, kwargs)
                 # Now, build the target dict for policy check.  We include:
                 #
@@ -215,7 +218,8 @@ def filterprotected(*filters):
                     target[key] = kwargs[key]
 
                 LOG.debug('\n####ISOLATION CHECK BEGINS####\n\n')
-                self.policy_api.enforce(creds, action,
+                self.policy_api.enforce(creds,
+                                        action,
                                         utils.flatten_dict(target),
                                         isolation=True)
 
