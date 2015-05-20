@@ -74,9 +74,10 @@ def enforce(action, target, credentials, isolation=False,
                                       target,
                                       credentials, **extra)
 
-    return _ENFORCER.enforce(action, target, credentials,
-                             rule_dict=rule_dict,
-                             **extra)
+    return _ENFORCER.enforce(action,
+                             target,
+                             credentials,
+                             rule_dict=rule_dict, **extra)
 
 
 class Policy(policy.Driver):
