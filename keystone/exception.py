@@ -308,10 +308,6 @@ class TrustUseLimitReached(Forbidden):
     message_format = _("No remaining uses for trust: %(trust_id)s")
 
 
-class CredentialNotFound(NotFound):
-    message_format = _("Could not find credential: %(credential_id)s")
-
-
 class VersionNotFound(NotFound):
     message_format = _("Could not find version: %(version)s")
 
@@ -342,6 +338,11 @@ class PublicIDNotFound(NotFound):
 class DomainConfigNotFound(NotFound):
     message_format = _('Could not find %(group_or_option)s in domain '
                        'configuration for domain %(domain_id)s')
+
+
+class InheritanceNotFound(NotFound):
+    message_format = _('Could not find role: %(asc_role_id)s inherits '
+                       'role: %(desc_role_id)s.')
 
 
 class Conflict(Error):
