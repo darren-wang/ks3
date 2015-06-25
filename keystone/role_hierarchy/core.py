@@ -25,8 +25,25 @@ class Manager(manager.Manager):
         except exception.InheritanceNotFound:
             return False
 
+    def list_immediate_ids(self, src_role_id):
+        idesc = self.driver.list_immediate_desc(src_role_id)
+        iid = [role['id'] for role in idesc]
+        return iid
+
     def list_reachable_roles(self, src_role_id):
-        pass
+        # ir, immediate reachable
+        # rr, reachable roles
+        rr = set()
+        ir = set(self.list_immediate_ids(src_role_id))
+        while ir:
+            for role_id in ir:
+                delta_ir = set(self.list_immediate_ids(role_id))
+                new_ir = ir.union(delta_ir)
+                new_ir.difference_update(rr)
+                new_ir.remove(role_id)
+                rr.add(role_id)
+                ir = new_ir
+        return rr
 
     def _reachable_role_ids(self, src_role_id):
         reachable_ids = []
