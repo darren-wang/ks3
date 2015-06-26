@@ -12,7 +12,8 @@ import six
 class Manager(manager.Manager):
 
     def add_inheritance(self, asc_id, desc_id):
-        return self.driver.add_inheritance(asc_id, desc_id)
+        d = {'asc_role_id':asc_id, 'desc_role_id':desc_id}
+        return self.driver.add_inheritance(asc_id, desc_id, d)
 
     def del_inheritance(self, asc_id, desc_id):
         return self.driver.del_inheritance(asc_id, desc_id)
@@ -25,21 +26,14 @@ class Manager(manager.Manager):
         except exception.InheritanceNotFound:
             return False
 
-    def _list_inheritance_ids(self, src_id):
-        try:
-            iid = self.driver.list_inheritances(src_id)
-        except exception.InheritanceNotFound:
-            iid = []
-        return iid
-
     def list_reachable_ids(self, src_id):
         # ir, immediate reachable
         # rr, reachable roles
         rr = set()
-        ir = set(self._list_inheritance_ids(src_id))
+        ir = set(self.driver.list_inheritances(src_id))
         while ir:
             for role_id in ir:
-                delta_ir = set(self._list_inheritance_ids(role_id))
+                delta_ir = set(self.driver.list_inheritances(role_id))
                 new_ir = ir.union(delta_ir)
                 new_ir.difference_update(rr)
                 new_ir.remove(role_id)

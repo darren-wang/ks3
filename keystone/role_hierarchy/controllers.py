@@ -72,4 +72,3 @@ class RoleHierarchy(controller.V3Controller):
 
     def get_role_hierarchy(self, domain_id):
         pass
-            
