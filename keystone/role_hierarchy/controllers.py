@@ -1,7 +1,7 @@
 from keystone.common import controller
 from keystone.common import dependency
 from keystone import exception
-from openstackclient.tests.identity.v2_0.fakes import role_id
+
 
 @dependency.requires('role_api', 'identity_api', 'rh_api')
 class RoleHierarchy(controller.V3Controller):
@@ -65,7 +65,7 @@ class RoleHierarchy(controller.V3Controller):
         reachable = self.rh_api.list_reachable_roles(src_role_id)
         for role in reachable:
             role_name =role['name']
-            lower_roles[role_name] = role_id
+            lower_roles[role_name] = role['id']
         result = {'role_name':name, 'role_id':src_role_id,
                   'lower_roles':lower_roles}
         return result

@@ -11,33 +11,35 @@ import six
 @dependency.requires('role_api')
 class Manager(manager.Manager):
 
-    def add_inheritance(self, asc_role_id, desc_role_id):
-        return self.driver.add_inheritance(asc_role_id, desc_role_id)
+    def add_inheritance(self, asc_id, desc_id):
+        return self.driver.add_inheritance(asc_id, desc_id)
 
-    def del_inheritance(self, asc_role_id, desc_role_id):
-        pass
+    def del_inheritance(self, asc_id, desc_id):
+        return self.driver.del_inheritance(asc_id, desc_id)
 
-    def check_inheritance(self, asc, desc):
+    def check_inheritance(self, asc_id, desc_id):
         try:
-            edge = self.driver.get_inheritance(asc, desc)
+            edge = self.driver.get_inheritance(asc_id, desc_id)
             if edge:
                 return True
         except exception.InheritanceNotFound:
             return False
 
-    def list_immediate_ids(self, src_role_id):
-        idesc = self.driver.list_immediate_desc(src_role_id)
-        iid = [role['id'] for role in idesc]
+    def _list_inheritance_ids(self, src_id):
+        try:
+            iid = self.driver.list_inheritances(src_id)
+        except exception.InheritanceNotFound:
+            iid = []
         return iid
 
-    def list_reachable_roles(self, src_role_id):
+    def list_reachable_ids(self, src_id):
         # ir, immediate reachable
         # rr, reachable roles
         rr = set()
-        ir = set(self.list_immediate_ids(src_role_id))
+        ir = set(self._list_inheritance_ids(src_id))
         while ir:
             for role_id in ir:
-                delta_ir = set(self.list_immediate_ids(role_id))
+                delta_ir = set(self._list_inheritance_ids(role_id))
                 new_ir = ir.union(delta_ir)
                 new_ir.difference_update(rr)
                 new_ir.remove(role_id)
@@ -45,15 +47,8 @@ class Manager(manager.Manager):
                 ir = new_ir
         return rr
 
-    def _reachable_role_ids(self, src_role_id):
-        reachable_ids = []
-        reachable = self._list_reachable_roles(src_role_id)
-        for role in reachable:
-            reachable_ids.append(role['id'])
-        return reachable_ids
-
-    def check_reachable(self, src_role_id, dest_role_id):
-        reachable_ids = self._reachable_role_ids(src_role_id)
+    def check_reachable(self, src, dest):
+        reachable_ids = self.list_reachable_ids(src)
         if dest_role_id in reachable_ids:
             return True
         return False
@@ -61,13 +56,18 @@ class Manager(manager.Manager):
 @six.add_metaclass(abc.ABCMeta)
 class Driver(object):
 
+    @abc.abstractmethod
     def add_inheritance(self, asc, desc):
         raise exception.NotImplemented()
 
+    @abc.abstractmethod
     def del_inheritance(self, asc, desc):
         raise exception.NotImplemented()
 
+    @abc.abstractmethod
     def get_inheritance(self, asc, desc):
         raise exception.NotImplemented()
 
-    
+    @abc.abstractmethod
+    def list_inheritances(self, src):
+        raise exception.NotImplemented()

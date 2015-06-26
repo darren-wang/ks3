@@ -13,6 +13,12 @@ class RoleHierarchyTable(sql.ModelBase, sql.DictBase):
 
 class RoleHierarchy(role_hierarchy.Driver):
 
+    def add_inheritance(self, asc_id, desc_id):
+        pass
+    
+    def del_inheritance(self, asc_id, desc_id):
+        pass
+
     def get_inheritance(self, asc_id, desc_id):
         with sql.transaction as session:
             query = session.query(RoleHierarchyTable)
@@ -25,3 +31,5 @@ class RoleHierarchy(role_hierarchy.Driver):
                                                     desc_role_id=desc_id)
             return rh_ref.to_dict()
 
+    def list_inheritances(self, src_id):
+        pass
