@@ -15,7 +15,6 @@
 
 """WSGI Routers for the Resource service."""
 
-from keystone.common import json_home
 from keystone.common import router
 from keystone.common import wsgi
 from keystone.resource import controllers
@@ -28,51 +27,6 @@ class Routers(wsgi.RoutersBase):
             router.Router(controllers.DomainV3(),
                           'domains', 'domain',
                           resource_descriptions=self.v3_resources))
-
-        config_controller = controllers.DomainConfigV3()
-
-        self._add_resource(
-            mapper, config_controller,
-            path='/domains/{domain_id}/config',
-            get_head_action='get_domain_config',
-            put_action='create_domain_config',
-            patch_action='update_domain_config_only',
-            delete_action='delete_domain_config',
-            rel=json_home.build_v3_resource_relation('domain_config'),
-            status=json_home.Status.EXPERIMENTAL,
-            path_vars={
-                'domain_id': json_home.Parameters.DOMAIN_ID
-            })
-
-        config_group_param = (
-            json_home.build_v3_parameter_relation('config_group'))
-        self._add_resource(
-            mapper, config_controller,
-            path='/domains/{domain_id}/config/{group}',
-            get_head_action='get_domain_config',
-            patch_action='update_domain_config_group',
-            delete_action='delete_domain_config',
-            rel=json_home.build_v3_resource_relation('domain_config_group'),
-            status=json_home.Status.EXPERIMENTAL,
-            path_vars={
-                'domain_id': json_home.Parameters.DOMAIN_ID,
-                'group': config_group_param
-            })
-
-        self._add_resource(
-            mapper, config_controller,
-            path='/domains/{domain_id}/config/{group}/{option}',
-            get_head_action='get_domain_config',
-            patch_action='update_domain_config',
-            delete_action='delete_domain_config',
-            rel=json_home.build_v3_resource_relation('domain_config_option'),
-            status=json_home.Status.EXPERIMENTAL,
-            path_vars={
-                'domain_id': json_home.Parameters.DOMAIN_ID,
-                'group': config_group_param,
-                'option': json_home.build_v3_parameter_relation(
-                    'config_option')
-            })
 
         routers.append(
             router.Router(controllers.ProjectV3(),

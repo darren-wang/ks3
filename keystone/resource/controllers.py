@@ -111,48 +111,6 @@ class DomainV3(controller.V3Controller):
         return self.resource_api.delete_domain(domain_id, initiator)
 
 
-@dependency.requires('domain_config_api')
-class DomainConfigV3(controller.V3Controller):
-    member_name = 'config'
-
-    @controller.protected()
-    def create_domain_config(self, context, domain_id, config):
-        original_config = (
-            self.domain_config_api.get_config_with_sensitive_info(domain_id))
-        ref = self.domain_config_api.create_config(domain_id, config)
-        if original_config:
-            # Return status code 200, since config already existed
-            return wsgi.render_response(body={self.member_name: ref})
-        else:
-            return wsgi.render_response(body={self.member_name: ref},
-                                        status=('201', 'Created'))
-
-    @controller.protected()
-    def get_domain_config(self, context, domain_id, group=None, option=None):
-        ref = self.domain_config_api.get_config(domain_id, group, option)
-        return {self.member_name: ref}
-
-    @controller.protected()
-    def update_domain_config(
-            self, context, domain_id, config, group, option):
-        ref = self.domain_config_api.update_config(
-            domain_id, config, group, option)
-        return wsgi.render_response(body={self.member_name: ref})
-
-    def update_domain_config_group(self, context, domain_id, group, config):
-        return self.update_domain_config(
-            context, domain_id, config, group, option=None)
-
-    def update_domain_config_only(self, context, domain_id, config):
-        return self.update_domain_config(
-            context, domain_id, config, group=None, option=None)
-
-    @controller.protected()
-    def delete_domain_config(
-            self, context, domain_id, group=None, option=None):
-        self.domain_config_api.delete_config(domain_id, group, option)
-
-
 @dependency.requires('resource_api')
 class ProjectV3(controller.V3Controller):
     collection_name = 'projects'
