@@ -14,7 +14,7 @@
 
 import sys
 
-from keystoneclient.common import cms
+from keystone.common import cms
 from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils
