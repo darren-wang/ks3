@@ -89,8 +89,7 @@ def exception_translated(exception_type):
 
 
 @dependency.provider('identity_api')
-@dependency.requires('assignment_api', 'id_mapping_api', 'resource_api',
-                     'revoke_api')
+@dependency.requires('assignment_api', 'resource_api', 'revoke_api')
 class Manager(manager.Manager):
     """Default pivot point for the Identity backend.
 
@@ -133,7 +132,6 @@ class Manager(manager.Manager):
 
     def __init__(self):
         super(Manager, self).__init__(CONF.identity.driver)
-        self.domain_configs = DomainConfigs()
 
         self.event_callbacks = {
             notifications.ACTIONS.deleted: {
@@ -158,7 +156,6 @@ class Manager(manager.Manager):
                           {'userid': user['id'], 'domainid': domain_id})
 
     # Domain ID normalization methods
-
     def _set_domain_id_and_mapping(self, ref, domain_id, driver,
                                    entity_type):
         """Patch the domain_id/public_id into the resulting entity(ies).
@@ -424,13 +421,12 @@ class Manager(manager.Manager):
 
         # For creating a user, the domain is in the object itself
         domain_id = user_ref['domain_id']
-        driver = self._select_identity_driver(domain_id)
-        user = self._clear_domain_id_if_domain_unaware(driver, user)
+
         # Generate a local ID - in the future this might become a function of
         # the underlying driver so that it could conform to rules set down by
         # that particular driver type.
         user['id'] = uuid.uuid4().hex
-        ref = driver.create_user(user['id'], user)
+        ref = self.driver.create_user(user['id'], user)
         notifications.Audit.created(self._USER, user['id'], initiator)
         return self._set_domain_id_and_mapping(
             ref, domain_id, driver, mapping.EntityType.USER)
