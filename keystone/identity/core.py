@@ -130,7 +130,6 @@ class Manager(manager.Manager):
 
     """
     _USER = 'user'
-    _GROUP = 'group'
 
     def __init__(self):
         super(Manager, self).__init__(CONF.identity.driver)
@@ -147,17 +146,6 @@ class Manager(manager.Manager):
         domain_id = payload['resource_info']
 
         user_refs = self.list_users(domain_scope=domain_id)
-        group_refs = self.list_groups(domain_scope=domain_id)
-
-        for group in group_refs:
-            # Cleanup any existing groups.
-            try:
-                self.delete_group(group['id'])
-            except exception.GroupNotFound:
-                LOG.debug(('Group %(groupid)s not found when deleting domain '
-                           'contents for %(domainid)s, continuing with '
-                           'cleanup.'),
-                          {'groupid': group['id'], 'domainid': domain_id})
 
         # And finally, delete the users themselves
         for user in user_refs:
@@ -396,25 +384,6 @@ class Manager(manager.Manager):
         # It is still possible that the public ID is just invalid in
         # which case we leave this to the caller to check.
         return (conf.admin_domain_id, driver, public_id)
-
-    def _assert_user_and_group_in_same_backend(
-            self, user_entity_id, user_driver, group_entity_id, group_driver):
-        """Ensures that user and group IDs are backed by the same backend.
-
-        Raise a CrossBackendNotAllowed exception if they are not from the same
-        backend, otherwise return None.
-
-        """
-        if user_driver is not group_driver:
-            # Determine first if either IDs don't exist by calling
-            # the driver.get methods (which will raise a NotFound
-            # exception).
-            user_driver.get_user(user_entity_id)
-            group_driver.get_group(group_entity_id)
-            # If we get here, then someone is attempting to create a cross
-            # backend membership, which is not allowed.
-            raise exception.CrossBackendNotAllowed(group_id=group_entity_id,
-                                                   user_id=user_entity_id)
 
     def _mark_domain_id_filter_satisfied(self, hints):
         if hints:

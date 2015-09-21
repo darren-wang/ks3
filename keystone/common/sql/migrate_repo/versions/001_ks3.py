@@ -62,16 +62,6 @@ def upgrade(migrate_engine):
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
-    group = sql.Table(
-        'group', meta,
-        sql.Column('id', sql.String(length=64), primary_key=True),
-        sql.Column('domain_id', sql.String(length=64), nullable=False),
-        sql.Column('name', sql.String(length=64), nullable=False),
-        sql.Column('description', sql.Text),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
     policy = sql.Table(
         'policy', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
