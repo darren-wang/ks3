@@ -44,30 +44,6 @@ class User(sql.ModelBase, sql.DictBase):
         return d
 
 
-class Group(sql.ModelBase, sql.DictBase):
-    __tablename__ = 'group'
-    attributes = ['id', 'name', 'domain_id', 'description']
-    id = sql.Column(sql.String(64), primary_key=True)
-    name = sql.Column(sql.String(64), nullable=False)
-    domain_id = sql.Column(sql.String(64), nullable=False)
-    description = sql.Column(sql.Text())
-    extra = sql.Column(sql.JsonBlob())
-    # Unique constraint across two columns to create the separation
-    # rather than just only 'name' being unique
-    __table_args__ = (sql.UniqueConstraint('domain_id', 'name'), {})
-
-
-class UserGroupMembership(sql.ModelBase, sql.DictBase):
-    """Group membership join table."""
-    __tablename__ = 'user_group_membership'
-    user_id = sql.Column(sql.String(64),
-                         sql.ForeignKey('user.id'),
-                         primary_key=True)
-    group_id = sql.Column(sql.String(64),
-                          sql.ForeignKey('group.id'),
-                          primary_key=True)
-
-
 class Identity(identity.Driver):
     # NOTE(henry-nash): Override the __init__() method so as to take a
     # config parameter to enable sql to be used as a domain-specific driver.
@@ -160,79 +136,6 @@ class Identity(identity.Driver):
             user_ref.extra = new_user.extra
         return identity.filter_user(user_ref.to_dict(include_extra_dict=True))
 
-    def add_user_to_group(self, user_id, group_id):
-        session = sql.get_session()
-        self.get_group(group_id)
-        self.get_user(user_id)
-        query = session.query(UserGroupMembership)
-        query = query.filter_by(user_id=user_id)
-        query = query.filter_by(group_id=group_id)
-        rv = query.first()
-        if rv:
-            return
-
-        with session.begin():
-            session.add(UserGroupMembership(user_id=user_id,
-                                            group_id=group_id))
-
-    def check_user_in_group(self, user_id, group_id):
-        session = sql.get_session()
-        self.get_group(group_id)
-        self.get_user(user_id)
-        query = session.query(UserGroupMembership)
-        query = query.filter_by(user_id=user_id)
-        query = query.filter_by(group_id=group_id)
-        if not query.first():
-            raise exception.NotFound(_("User '%(user_id)s' not found in"
-                                       " group '%(group_id)s'") %
-                                     {'user_id': user_id,
-                                      'group_id': group_id})
-
-    def remove_user_from_group(self, user_id, group_id):
-        session = sql.get_session()
-        # We don't check if user or group are still valid and let the remove
-        # be tried anyway - in case this is some kind of clean-up operation
-        query = session.query(UserGroupMembership)
-        query = query.filter_by(user_id=user_id)
-        query = query.filter_by(group_id=group_id)
-        membership_ref = query.first()
-        if membership_ref is None:
-            # Check if the group and user exist to return descriptive
-            # exceptions.
-            self.get_group(group_id)
-            self.get_user(user_id)
-            raise exception.NotFound(_("User '%(user_id)s' not found in"
-                                       " group '%(group_id)s'") %
-                                     {'user_id': user_id,
-                                      'group_id': group_id})
-        with session.begin():
-            session.delete(membership_ref)
-
-    def list_groups_for_user(self, user_id, hints):
-        # TODO(henry-nash) We could implement full filtering here by enhancing
-        # the join below.  However, since it is likely to be a fairly rare
-        # occurrence to filter on more than the user_id already being used
-        # here, this is left as future enhancement and until then we leave
-        # it for the controller to do for us.
-        session = sql.get_session()
-        self.get_user(user_id)
-        query = session.query(Group).join(UserGroupMembership)
-        query = query.filter(UserGroupMembership.user_id == user_id)
-        return [g.to_dict() for g in query]
-
-    def list_users_in_group(self, group_id, hints):
-        # TODO(henry-nash) We could implement full filtering here by enhancing
-        # the join below.  However, since it is likely to be a fairly rare
-        # occurrence to filter on more than the group_id already being used
-        # here, this is left as future enhancement and until then we leave
-        # it for the controller to do for us.
-        session = sql.get_session()
-        self.get_group(group_id)
-        query = session.query(User).join(UserGroupMembership)
-        query = query.filter(UserGroupMembership.group_id == group_id)
-
-        return [identity.filter_user(u.to_dict()) for u in query]
-
     def delete_user(self, user_id):
         session = sql.get_session()
 
@@ -241,72 +144,6 @@ class Identity(identity.Driver):
 
             q = session.query(UserGroupMembership)
             q = q.filter_by(user_id=user_id)
-            q.delete(False)
-
-            session.delete(ref)
-
-    # group crud
-
-    @sql.handle_conflicts(conflict_type='group')
-    def create_group(self, group_id, group):
-        session = sql.get_session()
-        with session.begin():
-            ref = Group.from_dict(group)
-            session.add(ref)
-        return ref.to_dict()
-
-    @sql.truncated
-    def list_groups(self, hints):
-        session = sql.get_session()
-        query = session.query(Group)
-        refs = sql.filter_limit_query(Group, query, hints)
-        return [ref.to_dict() for ref in refs]
-
-    def _get_group(self, session, group_id):
-        ref = session.query(Group).get(group_id)
-        if not ref:
-            raise exception.GroupNotFound(group_id=group_id)
-        return ref
-
-    def get_group(self, group_id):
-        session = sql.get_session()
-        return self._get_group(session, group_id).to_dict()
-
-    def get_group_by_name(self, group_name, domain_id):
-        session = sql.get_session()
-        query = session.query(Group)
-        query = query.filter_by(name=group_name)
-        query = query.filter_by(domain_id=domain_id)
-        try:
-            group_ref = query.one()
-        except sql.NotFound:
-            raise exception.GroupNotFound(group_id=group_name)
-        return group_ref.to_dict()
-
-    @sql.handle_conflicts(conflict_type='group')
-    def update_group(self, group_id, group):
-        session = sql.get_session()
-
-        with session.begin():
-            ref = self._get_group(session, group_id)
-            old_dict = ref.to_dict()
-            for k in group:
-                old_dict[k] = group[k]
-            new_group = Group.from_dict(old_dict)
-            for attr in Group.attributes:
-                if attr != 'id':
-                    setattr(ref, attr, getattr(new_group, attr))
-            ref.extra = new_group.extra
-        return ref.to_dict()
-
-    def delete_group(self, group_id):
-        session = sql.get_session()
-
-        with session.begin():
-            ref = self._get_group(session, group_id)
-
-            q = session.query(UserGroupMembership)
-            q = q.filter_by(group_id=group_id)
             q.delete(False)
 
             session.delete(ref)

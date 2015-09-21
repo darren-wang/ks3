@@ -67,26 +67,6 @@ def filter_user(user_ref):
     return user_ref
 
 
-def domains_configured(f):
-    """Wraps API calls to lazy load domain configs after init.
-
-    This is required since the assignment manager needs to be initialized
-    before this manager, and yet this manager's init wants to be
-    able to make assignment calls (to build the domain configs).  So
-    instead, we check if the domains have been initialized on entry
-    to each call, and if requires load them,
-
-    """
-    @functools.wraps(f)
-    def wrapper(self, *args, **kwargs):
-        if (not self.domain_configs.configured and
-                CONF.identity.domain_specific_drivers_enabled):
-            self.domain_configs.setup_domain_drivers(
-                self.driver, self.resource_api)
-        return f(self, *args, **kwargs)
-    return wrapper
-
-
 def exception_translated(exception_type):
     """Wraps API calls to map to correct exception."""
 
@@ -456,7 +436,6 @@ class Manager(manager.Manager):
     # - create any ID mapping that might be required
 
     @notifications.emit_event('authenticate')
-    @domains_configured
     @exception_translated('assertion')
     def authenticate(self, context, user_id, password):
         domain_id, driver, entity_id = (
@@ -465,7 +444,6 @@ class Manager(manager.Manager):
         return self._set_domain_id_and_mapping(
             ref, domain_id, driver, mapping.EntityType.USER)
 
-    @domains_configured
     @exception_translated('user')
     def create_user(self, user_ref, initiator=None):
         user = user_ref.copy()
@@ -488,7 +466,6 @@ class Manager(manager.Manager):
         return self._set_domain_id_and_mapping(
             ref, domain_id, driver, mapping.EntityType.USER)
 
-    @domains_configured
     @exception_translated('user')
     @MEMOIZE
     def get_user(self, user_id):
@@ -509,7 +486,6 @@ class Manager(manager.Manager):
         if not user.get('enabled', True):
             raise AssertionError(_('User is disabled: %s') % user_id)
 
-    @domains_configured
     @exception_translated('user')
     @MEMOIZE
     def get_user_by_name(self, user_name, domain_id):
@@ -519,7 +495,6 @@ class Manager(manager.Manager):
             ref, domain_id, driver, mapping.EntityType.USER)
 
     @manager.response_truncated
-    @domains_configured
     @exception_translated('user')
     def list_users(self, domain_scope=None, hints=None):
         driver = self._select_identity_driver(domain_scope)
@@ -536,7 +511,6 @@ class Manager(manager.Manager):
         return self._set_domain_id_and_mapping(
             ref_list, domain_scope, driver, mapping.EntityType.USER)
 
-    @domains_configured
     @exception_translated('user')
     def update_user(self, user_id, user_ref, initiator=None):
         old_user_ref = self.get_user(user_id)
@@ -574,7 +548,6 @@ class Manager(manager.Manager):
         return self._set_domain_id_and_mapping(
             ref, domain_id, driver, mapping.EntityType.USER)
 
-    @domains_configured
     @exception_translated('user')
     def delete_user(self, user_id, initiator=None):
         domain_id, driver, entity_id = (
@@ -589,116 +562,6 @@ class Manager(manager.Manager):
         self.id_mapping_api.delete_id_mapping(user_id)
         notifications.Audit.deleted(self._USER, user_id, initiator)
 
-    @domains_configured
-    @exception_translated('group')
-    def create_group(self, group_ref, initiator=None):
-        group = group_ref.copy()
-        group.setdefault('description', '')
-        domain_id = group['domain_id']
-        self.resource_api.get_domain(domain_id)
-
-        # For creating a group, the domain is in the object itself
-        domain_id = group_ref['domain_id']
-        driver = self._select_identity_driver(domain_id)
-        group = self._clear_domain_id_if_domain_unaware(driver, group)
-        # Generate a local ID - in the future this might become a function of
-        # the underlying driver so that it could conform to rules set down by
-        # that particular driver type.
-        group['id'] = uuid.uuid4().hex
-        ref = driver.create_group(group['id'], group)
-
-        notifications.Audit.created(self._GROUP, group['id'], initiator)
-
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.GROUP)
-
-    @domains_configured
-    @exception_translated('group')
-    @MEMOIZE
-    def get_group(self, group_id):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        ref = driver.get_group(entity_id)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.GROUP)
-
-    @domains_configured
-    @exception_translated('group')
-    def get_group_by_name(self, group_name, domain_id):
-        driver = self._select_identity_driver(domain_id)
-        ref = driver.get_group_by_name(group_name, domain_id)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.GROUP)
-
-    @domains_configured
-    @exception_translated('group')
-    def update_group(self, group_id, group, initiator=None):
-        if 'domain_id' in group:
-            self.resource_api.get_domain(group['domain_id'])
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        group = self._clear_domain_id_if_domain_unaware(driver, group)
-        ref = driver.update_group(entity_id, group)
-        self.get_group.invalidate(self, group_id)
-        notifications.Audit.updated(self._GROUP, group_id, initiator)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.GROUP)
-
-    @domains_configured
-    @exception_translated('group')
-    def delete_group(self, group_id, initiator=None):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        user_ids = (u['id'] for u in self.list_users_in_group(group_id))
-        driver.delete_group(entity_id)
-        self.get_group.invalidate(self, group_id)
-        self.id_mapping_api.delete_id_mapping(group_id)
-        self.assignment_api.delete_group(group_id)
-
-        notifications.Audit.deleted(self._GROUP, group_id, initiator)
-
-        for uid in user_ids:
-            self.emit_invalidate_user_token_persistence(uid)
-
-    @domains_configured
-    @exception_translated('group')
-    def add_user_to_group(self, user_id, group_id):
-        @exception_translated('user')
-        def get_entity_info_for_user(public_id):
-            return self._get_domain_driver_and_entity_id(public_id)
-
-        _domain_id, group_driver, group_entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        # Get the same info for the user_id, taking care to map any
-        # exceptions correctly
-        _domain_id, user_driver, user_entity_id = (
-            get_entity_info_for_user(user_id))
-
-        self._assert_user_and_group_in_same_backend(
-            user_entity_id, user_driver, group_entity_id, group_driver)
-
-        group_driver.add_user_to_group(user_entity_id, group_entity_id)
-
-    @domains_configured
-    @exception_translated('group')
-    def remove_user_from_group(self, user_id, group_id):
-        @exception_translated('user')
-        def get_entity_info_for_user(public_id):
-            return self._get_domain_driver_and_entity_id(public_id)
-
-        _domain_id, group_driver, group_entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        # Get the same info for the user_id, taking care to map any
-        # exceptions correctly
-        _domain_id, user_driver, user_entity_id = (
-            get_entity_info_for_user(user_id))
-
-        self._assert_user_and_group_in_same_backend(
-            user_entity_id, user_driver, group_entity_id, group_driver)
-
-        group_driver.remove_user_from_group(user_entity_id, group_entity_id)
-        self.emit_invalidate_user_token_persistence(user_id)
-
     @notifications.internal(notifications.INVALIDATE_USER_TOKEN_PERSISTENCE)
     def emit_invalidate_user_token_persistence(self, user_id):
         """Emit a notification to the callback system to revoke user tokens.
@@ -711,75 +574,6 @@ class Manager(manager.Manager):
         """
         pass
 
-    @manager.response_truncated
-    @domains_configured
-    @exception_translated('user')
-    def list_groups_for_user(self, user_id, hints=None):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(user_id))
-        hints = hints or driver_hints.Hints()
-        if not driver.is_domain_aware():
-            # We are effectively satisfying any domain_id filter by the above
-            # driver selection, so remove any such filter
-            self._mark_domain_id_filter_satisfied(hints)
-        ref_list = driver.list_groups_for_user(entity_id, hints)
-        return self._set_domain_id_and_mapping(
-            ref_list, domain_id, driver, mapping.EntityType.GROUP)
-
-    @manager.response_truncated
-    @domains_configured
-    @exception_translated('group')
-    def list_groups(self, domain_scope=None, hints=None):
-        driver = self._select_identity_driver(domain_scope)
-        hints = hints or driver_hints.Hints()
-        if driver.is_domain_aware():
-            # Force the domain_scope into the hint to ensure that we only get
-            # back domains for that scope.
-            self._ensure_domain_id_in_hints(hints, domain_scope)
-        else:
-            # We are effectively satisfying any domain_id filter by the above
-            # driver selection, so remove any such filter.
-            self._mark_domain_id_filter_satisfied(hints)
-        ref_list = driver.list_groups(hints)
-        return self._set_domain_id_and_mapping(
-            ref_list, domain_scope, driver, mapping.EntityType.GROUP)
-
-    @manager.response_truncated
-    @domains_configured
-    @exception_translated('group')
-    def list_users_in_group(self, group_id, hints=None):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        hints = hints or driver_hints.Hints()
-        if not driver.is_domain_aware():
-            # We are effectively satisfying any domain_id filter by the above
-            # driver selection, so remove any such filter
-            self._mark_domain_id_filter_satisfied(hints)
-        ref_list = driver.list_users_in_group(entity_id, hints)
-        return self._set_domain_id_and_mapping(
-            ref_list, domain_id, driver, mapping.EntityType.USER)
-
-    @domains_configured
-    @exception_translated('group')
-    def check_user_in_group(self, user_id, group_id):
-        @exception_translated('user')
-        def get_entity_info_for_user(public_id):
-            return self._get_domain_driver_and_entity_id(public_id)
-
-        _domain_id, group_driver, group_entity_id = (
-            self._get_domain_driver_and_entity_id(group_id))
-        # Get the same info for the user_id, taking care to map any
-        # exceptions correctly
-        _domain_id, user_driver, user_entity_id = (
-            get_entity_info_for_user(user_id))
-
-        self._assert_user_and_group_in_same_backend(
-            user_entity_id, user_driver, group_entity_id, group_driver)
-
-        return group_driver.check_user_in_group(user_entity_id,
-                                                group_entity_id)
-
-    @domains_configured
     def change_password(self, context, user_id, original_password,
                         new_password):
 
@@ -805,11 +599,6 @@ class Driver(object):
     def is_sql(self):
         """Indicates if this Driver uses SQL."""
         return False
-
-    @property
-    def multiple_domains_supported(self):
-        return (self.is_domain_aware() or
-                CONF.identity.domain_specific_drivers_enabled)
 
     def generates_uuids(self):
         """Indicates if Driver generates UUIDs as the local entity ID."""
@@ -847,19 +636,6 @@ class Driver(object):
         raise exception.NotImplemented()  # pragma: no cover
 
     @abc.abstractmethod
-    def list_users_in_group(self, group_id, hints):
-        """List users in a group.
-
-        :param group_id: the group in question
-        :param hints: filter hints which the driver should
-                      implement if at all possible.
-
-        :returns: a list of user_refs or an empty list.
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
     def get_user(self, user_id):
         """Get a user by ID.
 
@@ -880,35 +656,6 @@ class Driver(object):
         raise exception.NotImplemented()  # pragma: no cover
 
     @abc.abstractmethod
-    def add_user_to_group(self, user_id, group_id):
-        """Adds a user to a group.
-
-        :raises: keystone.exception.UserNotFound,
-                 keystone.exception.GroupNotFound
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def check_user_in_group(self, user_id, group_id):
-        """Checks if a user is a member of a group.
-
-        :raises: keystone.exception.UserNotFound,
-                 keystone.exception.GroupNotFound
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def remove_user_from_group(self, user_id, group_id):
-        """Removes a user from a group.
-
-        :raises: keystone.exception.NotFound
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
     def delete_user(self, user_id):
         """Deletes an existing user.
 
@@ -923,81 +670,6 @@ class Driver(object):
 
         :returns: user_ref
         :raises: keystone.exception.UserNotFound
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    # group crud
-
-    @abc.abstractmethod
-    def create_group(self, group_id, group):
-        """Creates a new group.
-
-        :raises: keystone.exception.Conflict
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def list_groups(self, hints):
-        """List groups in the system.
-
-        :param hints: filter hints which the driver should
-                      implement if at all possible.
-
-        :returns: a list of group_refs or an empty list.
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def list_groups_for_user(self, user_id, hints):
-        """List groups a user is in
-
-        :param user_id: the user in question
-        :param hints: filter hints which the driver should
-                      implement if at all possible.
-
-        :returns: a list of group_refs or an empty list.
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def get_group(self, group_id):
-        """Get a group by ID.
-
-        :returns: group_ref
-        :raises: keystone.exception.GroupNotFound
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def get_group_by_name(self, group_name, domain_id):
-        """Get a group by name.
-
-        :returns: group_ref
-        :raises: keystone.exception.GroupNotFound
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def update_group(self, group_id, group):
-        """Updates an existing group.
-
-        :raises: keystone.exceptionGroupNotFound,
-                 keystone.exception.Conflict
-
-        """
-        raise exception.NotImplemented()  # pragma: no cover
-
-    @abc.abstractmethod
-    def delete_group(self, group_id):
-        """Deletes an existing group.
-
-        :raises: keystone.exception.GroupNotFound
 
         """
         raise exception.NotImplemented()  # pragma: no cover
