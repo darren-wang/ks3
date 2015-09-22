@@ -10,6 +10,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+'''
+This module is copied from keystoneclient.common.cms so that ks3 does not 
+depend on keystoneclient.
+'''
+
 """Certificate signing functions.
 
 Call set_subprocess() with the subprocess module. Either Python's
