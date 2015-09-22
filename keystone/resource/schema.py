@@ -35,7 +35,7 @@ project_create = {
     # NOTE(lbragstad): A project name is the only parameter required for
     # project creation according to the Identity V3 API. We should think
     # about using the maxProperties validator here, and in update.
-    'required': ['name'],
+    'required': ['name', 'domain_id'],
     'additionalProperties': True
 }
 

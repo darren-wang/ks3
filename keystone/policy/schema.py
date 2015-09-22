@@ -19,18 +19,18 @@ _policy_properties = {
         'minLength': 1,
         'maxLength': 64
     },
-    'blob': {
-        'type': 'string'
-    },
-    'description': validation.nullable(parameter_types.description),
     'domain_id': parameter_types.id_string,
+    'service': { 'type': 'string', 'minLength': 1, 'maxLength': 32 },
+    'action': { 'type': 'string', 'minLength': 1, 'maxLength': 64 },
+    'rule': { 'type': 'string' },
+    'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
 }
 
 policy_create = {
     'type': 'object',
     'properties': _policy_properties,
-    'required': ['blob', 'domain_id', 'name'],
+    'required': ['name', 'domain_id', 'service', 'action', 'rule'],
     'additionalProperties': True
 }
 
