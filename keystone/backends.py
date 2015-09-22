@@ -19,7 +19,6 @@ from keystone import identity
 from keystone import policy
 from keystone import resource
 from keystone import token
-from keystone import trust
 
 
 def load_backends():
@@ -37,16 +36,12 @@ def load_backends():
     DRIVERS = dict(
         assignment_api=_ASSIGNMENT_API,
         catalog_api=catalog.Manager(),
-        domain_config_api=resource.DomainConfigManager(),
-        id_generator_api=identity.generator.Manager(),
-        id_mapping_api=identity.MappingManager(),
         identity_api=_IDENTITY_API,
         policy_api=policy.Manager(),
         resource_api=resource.Manager(),
         revoke_api=revoke.Manager(),
         role_api=assignment.RoleManager(),
         token_api=token.persistence.Manager(),
-        trust_api=trust.Manager(),
         token_provider_api=token.provider.Manager())
 
     auth.controllers.load_auth_methods()
