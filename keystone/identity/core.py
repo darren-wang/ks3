@@ -155,240 +155,6 @@ class Manager(manager.Manager):
                            'cleanup.'),
                           {'userid': user['id'], 'domainid': domain_id})
 
-    # Domain ID normalization methods
-    def _set_domain_id_and_mapping(self, ref, domain_id, driver,
-                                   entity_type):
-        """Patch the domain_id/public_id into the resulting entity(ies).
-
-        :param ref: the entity or list of entities to post process
-        :param domain_id: the domain scope used for the call
-        :param driver: the driver used to execute the call
-        :param entity_type: whether this is a user or group
-
-        :returns: post processed entity or list or entities
-
-        Called to post-process the entity being returned, using a mapping
-        to substitute a public facing ID as necessary. This method must
-        take into account:
-
-        - If the driver is not domain aware, then we must set the domain
-          attribute of all entities irrespective of mapping.
-        - If the driver does not support UUIDs, then we always want to provide
-          a mapping, except for the special case of this being the default
-          driver and backward_compatible_ids is set to True. This is to ensure
-          that entity IDs do not change for an existing LDAP installation (only
-          single domain/driver LDAP configurations were previously supported).
-        - If the driver does support UUIDs, then we always create a mapping
-          entry, but use the local UUID as the public ID.  The exception to
-        - this is that if we just have single driver (i.e. not using specific
-          multi-domain configs), then we don't both with the mapping at all.
-
-        """
-        conf = CONF.identity
-
-        if not self._needs_post_processing(driver):
-            # a classic case would be when running with a single SQL driver
-            return ref
-
-        LOG.debug('ID Mapping - Domain ID: %(domain)s, '
-                  'Default Driver: %(driver)s, '
-                  'Domains: %(aware)s, UUIDs: %(generate)s, '
-                  'Compatible IDs: %(compat)s',
-                  {'domain': domain_id,
-                   'driver': (driver == self.driver),
-                   'aware': driver.is_domain_aware(),
-                   'generate': driver.generates_uuids(),
-                   'compat': CONF.identity_mapping.backward_compatible_ids})
-
-        if isinstance(ref, dict):
-            return self._set_domain_id_and_mapping_for_single_ref(
-                ref, domain_id, driver, entity_type, conf)
-        elif isinstance(ref, list):
-            return [self._set_domain_id_and_mapping(
-                    x, domain_id, driver, entity_type) for x in ref]
-        else:
-            raise ValueError(_('Expected dict or list: %s') % type(ref))
-
-    def _needs_post_processing(self, driver):
-        """Returns whether entity from driver needs domain added or mapping."""
-        return (driver is not self.driver or not driver.generates_uuids() or
-                not driver.is_domain_aware())
-
-    def _set_domain_id_and_mapping_for_single_ref(self, ref, domain_id,
-                                                  driver, entity_type, conf):
-        LOG.debug('Local ID: %s', ref['id'])
-        ref = ref.copy()
-
-        self._insert_domain_id_if_needed(ref, driver, domain_id, conf)
-
-        if self._is_mapping_needed(driver):
-            local_entity = {'domain_id': ref['domain_id'],
-                            'local_id': ref['id'],
-                            'entity_type': entity_type}
-            public_id = self.id_mapping_api.get_public_id(local_entity)
-            if public_id:
-                ref['id'] = public_id
-                LOG.debug('Found existing mapping to public ID: %s',
-                          ref['id'])
-            else:
-                # Need to create a mapping. If the driver generates UUIDs
-                # then pass the local UUID in as the public ID to use.
-                if driver.generates_uuids():
-                    public_id = ref['id']
-                ref['id'] = self.id_mapping_api.create_id_mapping(
-                    local_entity, public_id)
-                LOG.debug('Created new mapping to public ID: %s',
-                          ref['id'])
-        return ref
-
-    def _insert_domain_id_if_needed(self, ref, driver, domain_id, conf):
-        """Inserts the domain ID into the ref, if required.
-
-        If the driver can't handle domains, then we need to insert the
-        domain_id into the entity being returned.  If the domain_id is
-        None that means we are running in a single backend mode, so to
-        remain backwardly compatible, we put in the default domain ID.
-        """
-        if not driver.is_domain_aware():
-            if domain_id is None:
-                domain_id = conf.admin_domain_id
-            ref['domain_id'] = domain_id
-
-    def _is_mapping_needed(self, driver):
-        """Returns whether mapping is needed.
-
-        There are two situations where we must use the mapping:
-        - this isn't the default driver (i.e. multiple backends), or
-        - we have a single backend that doesn't use UUIDs
-        The exception to the above is that we must honor backward
-        compatibility if this is the default driver (e.g. to support
-        current LDAP)
-        """
-        is_not_default_driver = driver is not self.driver
-        return (is_not_default_driver or (
-            not driver.generates_uuids() and
-            not CONF.identity_mapping.backward_compatible_ids))
-
-    def _clear_domain_id_if_domain_unaware(self, driver, ref):
-        """Clear domain_id details if driver is not domain aware."""
-        if not driver.is_domain_aware() and 'domain_id' in ref:
-            ref = ref.copy()
-            ref.pop('domain_id')
-        return ref
-
-    def _select_identity_driver(self, domain_id):
-        """Choose a backend driver for the given domain_id.
-
-        :param domain_id: The domain_id for which we want to find a driver.  If
-                          the domain_id is specified as None, then this means
-                          we need a driver that handles multiple domains.
-
-        :returns: chosen backend driver
-
-        If there is a specific driver defined for this domain then choose it.
-        If the domain is None, or there no specific backend for the given
-        domain is found, then we chose the default driver.
-
-        """
-        if domain_id is None:
-            driver = self.driver
-        else:
-            driver = (self.domain_configs.get_domain_driver(domain_id) or
-                      self.driver)
-
-        # If the driver is not domain aware (e.g. LDAP) then check to
-        # ensure we are not mapping multiple domains onto it - the only way
-        # that would happen is that the default driver is LDAP and the
-        # domain is anything other than None or the default domain.
-        if (not driver.is_domain_aware() and driver == self.driver and
-            domain_id != CONF.identity.admin_domain_id and
-                domain_id is not None):
-                    LOG.warning('Found multiple domains being mapped to a '
-                                'driver that does not support that (e.g. '
-                                'LDAP) - Domain ID: %(domain)s, '
-                                'Default Driver: %(driver)s',
-                                {'domain': domain_id,
-                                 'driver': (driver == self.driver)})
-                    raise exception.DomainNotFound(domain_id=domain_id)
-        return driver
-
-    def _get_domain_driver_and_entity_id(self, public_id):
-        """Look up details using the public ID.
-
-        :param public_id: the ID provided in the call
-
-        :returns: domain_id, which can be None to indicate that the driver
-                  in question supports multiple domains
-                  driver selected based on this domain
-                  entity_id which will is understood by the driver.
-
-        Use the mapping table to look up the domain, driver and local entity
-        that is represented by the provided public ID.  Handle the situations
-        were we do not use the mapping (e.g. single driver that understands
-        UUIDs etc.)
-
-        """
-        conf = CONF.identity
-        # First, since we don't know anything about the entity yet, we must
-        # assume it needs mapping, so long as we are using domain specific
-        # drivers.
-        if conf.domain_specific_drivers_enabled:
-            local_id_ref = self.id_mapping_api.get_id_mapping(public_id)
-            if local_id_ref:
-                return (
-                    local_id_ref['domain_id'],
-                    self._select_identity_driver(local_id_ref['domain_id']),
-                    local_id_ref['local_id'])
-
-        # So either we are using multiple drivers but the public ID is invalid
-        # (and hence was not found in the mapping table), or the public ID is
-        # being handled by the default driver.  Either way, the only place left
-        # to look is in that standard driver. However, we don't yet know if
-        # this driver also needs mapping (e.g. LDAP in non backward
-        # compatibility mode).
-        driver = self.driver
-        if driver.generates_uuids():
-            if driver.is_domain_aware:
-                # No mapping required, and the driver can handle the domain
-                # information itself.  The classic case of this is the
-                # current SQL driver.
-                return (None, driver, public_id)
-            else:
-                # Although we don't have any drivers of this type, i.e. that
-                # understand UUIDs but not domains, conceptually you could.
-                return (conf.admin_domain_id, driver, public_id)
-
-        # So the only place left to find the ID is in the default driver which
-        # we now know doesn't generate UUIDs
-        if not CONF.identity_mapping.backward_compatible_ids:
-            # We are not running in backward compatibility mode, so we
-            # must use a mapping.
-            local_id_ref = self.id_mapping_api.get_id_mapping(public_id)
-            if local_id_ref:
-                return (
-                    local_id_ref['domain_id'],
-                    driver,
-                    local_id_ref['local_id'])
-            else:
-                raise exception.PublicIDNotFound(id=public_id)
-
-        # If we reach here, this means that the default driver
-        # requires no mapping - but also doesn't understand domains
-        # (e.g. the classic single LDAP driver situation). Hence we pass
-        # back the public_ID unmodified and use the default domain (to
-        # keep backwards compatibility with existing installations).
-        #
-        # It is still possible that the public ID is just invalid in
-        # which case we leave this to the caller to check.
-        return (conf.admin_domain_id, driver, public_id)
-
-    def _mark_domain_id_filter_satisfied(self, hints):
-        if hints:
-            for filter in hints.filters:
-                if (filter['name'] == 'domain_id' and
-                        filter['comparator'] == 'equals'):
-                    hints.filters.remove(filter)
-
     def _ensure_domain_id_in_hints(self, hints, domain_id):
         if (domain_id is not None and
                 not hints.get_exact_filter_by_name('domain_id')):
@@ -404,11 +170,7 @@ class Manager(manager.Manager):
     @notifications.emit_event('authenticate')
     @exception_translated('assertion')
     def authenticate(self, context, user_id, password):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(user_id))
-        ref = driver.authenticate(entity_id, password)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.USER)
+        return self.driver.authenticate(user_id, password)
 
     @exception_translated('user')
     def create_user(self, user_ref, initiator=None):
@@ -428,17 +190,12 @@ class Manager(manager.Manager):
         user['id'] = uuid.uuid4().hex
         ref = self.driver.create_user(user['id'], user)
         notifications.Audit.created(self._USER, user['id'], initiator)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.USER)
+        return ref
 
     @exception_translated('user')
     @MEMOIZE
     def get_user(self, user_id):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(user_id))
-        ref = driver.get_user(entity_id)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.USER)
+        return self.driver.get_user(user_id)
 
     def assert_user_enabled(self, user_id, user=None):
         """Assert the user and the user's domain are enabled.
@@ -454,27 +211,18 @@ class Manager(manager.Manager):
     @exception_translated('user')
     @MEMOIZE
     def get_user_by_name(self, user_name, domain_id):
-        driver = self._select_identity_driver(domain_id)
-        ref = driver.get_user_by_name(user_name, domain_id)
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.USER)
+        return self.driver.get_user_by_name(user_name, domain_id)
 
     @manager.response_truncated
     @exception_translated('user')
     def list_users(self, domain_scope=None, hints=None):
-        driver = self._select_identity_driver(domain_scope)
         hints = hints or driver_hints.Hints()
-        if driver.is_domain_aware():
-            # Force the domain_scope into the hint to ensure that we only get
-            # back domains for that scope.
-            self._ensure_domain_id_in_hints(hints, domain_scope)
-        else:
-            # We are effectively satisfying any domain_id filter by the above
-            # driver selection, so remove any such filter.
-            self._mark_domain_id_filter_satisfied(hints)
-        ref_list = driver.list_users(hints)
-        return self._set_domain_id_and_mapping(
-            ref_list, domain_scope, driver, mapping.EntityType.USER)
+        # Force the domain_scope into the hint to ensure that we only get
+        # back domains for that scope.
+        self._ensure_domain_id_in_hints(hints, domain_scope)
+
+        return self.driver.list_users(hints)
+        
 
     @exception_translated('user')
     def update_user(self, user_id, user_ref, initiator=None):
@@ -494,14 +242,11 @@ class Manager(manager.Manager):
             # public ID not the local ID
             user.pop('id')
 
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(user_id))
-        user = self._clear_domain_id_if_domain_unaware(driver, user)
         self.get_user.invalidate(self, old_user_ref['id'])
         self.get_user_by_name.invalidate(self, old_user_ref['name'],
                                          old_user_ref['domain_id'])
 
-        ref = driver.update_user(entity_id, user)
+        ref = self.driver.update_user(user_id, user)
 
         notifications.Audit.updated(self._USER, user_id, initiator)
 
@@ -510,21 +255,17 @@ class Manager(manager.Manager):
         if enabled_change or user.get('password') is not None:
             self.emit_invalidate_user_token_persistence(user_id)
 
-        return self._set_domain_id_and_mapping(
-            ref, domain_id, driver, mapping.EntityType.USER)
+        return ref
 
     @exception_translated('user')
     def delete_user(self, user_id, initiator=None):
-        domain_id, driver, entity_id = (
-            self._get_domain_driver_and_entity_id(user_id))
         # Get user details to invalidate the cache.
         user_old = self.get_user(user_id)
-        driver.delete_user(entity_id)
+        self.driver.delete_user(user_id)
         self.assignment_api.delete_user(user_id)
         self.get_user.invalidate(self, user_id)
         self.get_user_by_name.invalidate(self, user_old['name'],
                                          user_old['domain_id'])
-        self.id_mapping_api.delete_id_mapping(user_id)
         notifications.Audit.deleted(self._USER, user_id, initiator)
 
     @notifications.internal(notifications.INVALIDATE_USER_TOKEN_PERSISTENCE)
