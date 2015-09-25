@@ -39,11 +39,30 @@ def upgrade(migrate_engine):
             'ALTER DATABASE %s DEFAULT CHARACTER SET utf8' %
             migrate_engine.url.database)
 
+    assignment = sql.Table(
+        'assignment',
+        meta,
+        sql.Column('type', sql.Enum(
+            assignment_sql.AssignmentType.USER_PROJECT,
+            assignment_sql.AssignmentType.GROUP_PROJECT,
+            assignment_sql.AssignmentType.USER_DOMAIN,
+            assignment_sql.AssignmentType.GROUP_DOMAIN,
+            name='type'),
+            nullable=False),
+        sql.Column('actor_id', sql.String(64), nullable=False),
+        sql.Column('target_id', sql.String(64), nullable=False),
+        sql.Column('role_id', sql.String(64), nullable=False),
+        sql.Column('inherited', sql.Boolean, default=False, nullable=False),
+        sql.PrimaryKeyConstraint('type', 'actor_id', 'target_id', 'role_id'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8')
+
     domain = sql.Table(
         'domain', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
         sql.Column('name', sql.String(length=64), nullable=False),
         sql.Column('enabled', sql.Boolean, default=True, nullable=False),
+        sql.Column('description', sql.Text(), nullable=True),
         sql.Column('extra', ks_sql.JsonBlob.impl),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
@@ -51,7 +70,6 @@ def upgrade(migrate_engine):
     endpoint = sql.Table(
         'endpoint', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
-        sql.Column('legacy_endpoint_id', sql.String(length=64)),
         sql.Column('interface', sql.String(length=8), nullable=False),
         sql.Column('region', sql.String(length=255)),
         sql.Column('service_id', sql.String(length=64), nullable=False),
@@ -59,15 +77,19 @@ def upgrade(migrate_engine):
         sql.Column('extra', ks_sql.JsonBlob.impl),
         sql.Column('enabled', sql.Boolean, nullable=False, default=True,
                    server_default='1'),
+        sql.Column('description', sql.String(255), nullable=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
     policy = sql.Table(
         'policy', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
-        sql.Column('type', sql.String(length=255), nullable=False),
-        sql.Column('blob', ks_sql.JsonBlob, nullable=False),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
+        sql.Column('domain_id', sql.String(length=64), nullable=False),
+        sql.Column('service', sql.String(length=32), nullable=False),
+        sql.Column('action',  sql.String(length=64), nullable=False),
+        sql.Column('rule', ks_sql.JsonBlob.impl, nullable=False),
+        sql.Column('description', sql.Text),
+        sql.Column('enabled', sql.Boolean, default=True, nullable=False),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
@@ -79,6 +101,16 @@ def upgrade(migrate_engine):
         sql.Column('description', sql.Text),
         sql.Column('enabled', sql.Boolean),
         sql.Column('domain_id', sql.String(length=64), nullable=False),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8')
+
+    region = sql.Table(
+        'region',
+        meta,
+        sql.Column('id', sql.String(64), primary_key=True),
+        sql.Column('description', sql.String(255), nullable=False),
+        sql.Column('parent_region_id', sql.String(64), nullable=True),
+        sql.Column('extra', sql.Text()),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
@@ -98,6 +130,7 @@ def upgrade(migrate_engine):
         sql.Column('type', sql.String(length=255)),
         sql.Column('enabled', sql.Boolean, nullable=False, default=True,
                    server_default='1'),
+        sql.Column('description', sql.String(255), nullable=True),
         sql.Column('extra', ks_sql.JsonBlob.impl),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
@@ -117,54 +150,18 @@ def upgrade(migrate_engine):
         'user', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
         sql.Column('name', sql.String(length=255), nullable=False),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
         sql.Column('password', sql.String(length=128)),
-        sql.Column('enabled', sql.Boolean),
         sql.Column('domain_id', sql.String(length=64), nullable=False),
-        sql.Column('default_project_id', sql.String(length=64)),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
-    user_group_membership = sql.Table(
-        'user_group_membership', meta,
-        sql.Column('user_id', sql.String(length=64), primary_key=True),
-        sql.Column('group_id', sql.String(length=64), primary_key=True),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
-    region = sql.Table(
-        'region',
-        meta,
-        sql.Column('id', sql.String(64), primary_key=True),
-        sql.Column('description', sql.String(255), nullable=False),
-        sql.Column('parent_region_id', sql.String(64), nullable=True),
-        sql.Column('extra', sql.Text()),
-        mysql_engine='InnoDB',
-        mysql_charset='utf8')
-
-    assignment = sql.Table(
-        'assignment',
-        meta,
-        sql.Column('type', sql.Enum(
-            assignment_sql.AssignmentType.USER_PROJECT,
-            assignment_sql.AssignmentType.GROUP_PROJECT,
-            assignment_sql.AssignmentType.USER_DOMAIN,
-            assignment_sql.AssignmentType.GROUP_DOMAIN,
-            name='type'),
-            nullable=False),
-        sql.Column('actor_id', sql.String(64), nullable=False),
-        sql.Column('target_id', sql.String(64), nullable=False),
-        sql.Column('role_id', sql.String(64), nullable=False),
-        sql.Column('inherited', sql.Boolean, default=False, nullable=False),
-        sql.PrimaryKeyConstraint('type', 'actor_id', 'target_id', 'role_id'),
+        sql.Column('description', sql.Text(), nullable=True),
+        sql.Column('enabled', sql.Boolean),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
     # create all tables
     tables = [region, service, endpoint, 
               domain, project, role, assignment,
-              group, user, user_group_membership,
-              policy, token ]
+              user, policy, token ]
 
     for table in tables:
         try:
@@ -177,15 +174,16 @@ def upgrade(migrate_engine):
     migrate.UniqueConstraint(user.c.domain_id,
                              user.c.name,
                              name='ixu_user_name_domain_id').create()
-    migrate.UniqueConstraint(group.c.domain_id,
-                             group.c.name,
-                             name='ixu_group_name_domain_id').create()
     migrate.UniqueConstraint(role.c.name,
                              role.c.domain_id,
                              name='ixu_role_name_domain_id').create()
     migrate.UniqueConstraint(project.c.domain_id,
                              project.c.name,
                              name='ixu_project_name_domain_id').create()
+    migrate.UniqueConstraint(policy.c.domain_id,
+                             policy.c.service,
+                             policy.c.action,
+                             name='ixu_policy_domain_id_service_action').create()
     migrate.UniqueConstraint(domain.c.name,
                              name='ixu_domain_name').create()
 
@@ -193,37 +191,33 @@ def upgrade(migrate_engine):
     sql.Index('ix_token_expires', token.c.expires).create()
     sql.Index('ix_token_expires_valid', token.c.expires,
               token.c.valid).create()
+    
+    sql.Index('ix_actor_id', assignment.c.actor_id).create()
+    
+    sql.Index('ix_token_user_id', token.c.user_id).create()
+    sql.Index('ix_token_trust_id', token.c.trust_id).create()
 
+    # Foreign keys
     fkeys = [
-        {'columns': [endpoint.c.service_id],
-         'references': [service.c.id]},
-
-        {'columns': [user_group_membership.c.group_id],
-         'references': [group.c.id],
-         'name': 'fk_user_group_membership_group_id'},
-
-        {'columns': [user_group_membership.c.user_id],
-         'references':[user.c.id],
-         'name': 'fk_user_group_membership_user_id'},
-
         {'columns': [user.c.domain_id],
          'references': [domain.c.id],
          'name': 'fk_user_domain_id'},
-
-        {'columns': [group.c.domain_id],
-         'references': [domain.c.id],
-         'name': 'fk_group_domain_id'},
 
         {'columns': [project.c.domain_id],
          'references': [domain.c.id],
          'name': 'fk_project_domain_id'},
 
-        {'columns': [assignment.c.role_id],
-         'references': [role.c.id]},
-        
         {'columns': [role.c.domain_id],
          'references': [domain.c.id],
-         'name': 'fk_role_domain_id'}
+         'name': 'fk_role_domain_id'},
+   
+        {'columns': [policy.c.domain_id],
+         'references': [domain.c.id],
+         'name':'fk_policy_domain_id'},
+
+        {'columns': [endpoint.c.service_id],
+         'references': [service.c.id],
+         'name': 'fk_endpoint_service_id'}
     ]
 
     for fkey in fkeys:
