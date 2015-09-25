@@ -14,11 +14,6 @@ from keystone.common import validation
 from keystone.common.validation import parameter_types
 
 _policy_properties = {
-    'name': {
-        'type': 'string',
-        'minLength': 1,
-        'maxLength': 64
-    },
     'domain_id': parameter_types.id_string,
     'service': { 'type': 'string', 'minLength': 1, 'maxLength': 32 },
     'action': { 'type': 'string', 'minLength': 1, 'maxLength': 64 },

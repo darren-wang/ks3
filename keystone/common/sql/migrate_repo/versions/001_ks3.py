@@ -97,10 +97,10 @@ def upgrade(migrate_engine):
         'project', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
         sql.Column('name', sql.String(length=64), nullable=False),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
         sql.Column('description', sql.Text),
         sql.Column('enabled', sql.Boolean),
         sql.Column('domain_id', sql.String(length=64), nullable=False),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
