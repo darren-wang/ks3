@@ -73,7 +73,7 @@ def enforce(action, target, credentials, check_type=None, do_raise=True):
                              domain=check_type, **extra)
 
 
-class Policy(policy.Driver):
+class Policy(policy.PolicyDriver):
 
     def enforce(self, action, target, credentials, check_type=None):
         LOG.debug('API protection:\nSUBJECT\n\t%(credentials)s \nACT'

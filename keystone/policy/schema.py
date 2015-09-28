@@ -13,25 +13,54 @@
 from keystone.common import validation
 from keystone.common.validation import parameter_types
 
+
 _policy_properties = {
     'domain_id': parameter_types.id_string,
-    'service': { 'type': 'string', 'minLength': 1, 'maxLength': 32 },
-    'action': { 'type': 'string', 'minLength': 1, 'maxLength': 64 },
-    'rule': { 'type': 'string' },
+    'name': parameter_types.name,
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
+    'policy': {
+        'type': 'string'
+    }
 }
 
 policy_create = {
     'type': 'object',
     'properties': _policy_properties,
-    'required': ['name', 'domain_id', 'service', 'action', 'rule'],
+    'required': ['domain_id', 'policy'],
     'additionalProperties': True
 }
 
-policy_update = {
+policy_update = {  
     'type': 'object',
     'properties': _policy_properties,
     'minProperties': 1,
     'additionalProperties': True
+}
+
+_rule_properties = {
+    'policy_id': parameter_types.id_string,
+    'service': {
+        'type': 'string'
+    },
+    'action': {
+        'type': 'string'
+    },
+    'content': {
+        'type': 'string'
+    },
+}
+
+rule_create = {
+    'type': 'object',
+    'properties': _rule_properties,
+    'required': ['policy_id', 'service', 'action', 'content'],
+    'additionalProperties': False
+}
+
+rule_update = {  
+    'type': 'object',
+    'properties': _rule_properties,
+    'minProperties': 1,
+    'additionalProperties': False
 }

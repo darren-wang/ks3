@@ -84,12 +84,10 @@ def upgrade(migrate_engine):
     policy = sql.Table(
         'policy', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('name', sql.String(length=64), nullable=False),
         sql.Column('domain_id', sql.String(length=64), nullable=False),
-        sql.Column('service', sql.String(length=32), nullable=False),
-        sql.Column('action',  sql.String(length=64), nullable=False),
-        sql.Column('rule', ks_sql.JsonBlob.impl, nullable=False),
-        sql.Column('description', sql.Text),
-        sql.Column('enabled', sql.Boolean, default=True, nullable=False),
+        sql.Column('description', sql.Text, nullable=True),
+        sql.Column('enabled', sql.Boolean, nullable=False, default=False),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
@@ -97,16 +95,14 @@ def upgrade(migrate_engine):
         'project', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
         sql.Column('name', sql.String(length=64), nullable=False),
+        sql.Column('domain_id', sql.String(length=64), nullable=False),
         sql.Column('description', sql.Text),
         sql.Column('enabled', sql.Boolean),
-        sql.Column('domain_id', sql.String(length=64), nullable=False),
-        sql.Column('extra', ks_sql.JsonBlob.impl),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
     region = sql.Table(
-        'region',
-        meta,
+        'region', meta,
         sql.Column('id', sql.String(64), primary_key=True),
         sql.Column('description', sql.String(255), nullable=False),
         sql.Column('parent_region_id', sql.String(64), nullable=True),
@@ -121,6 +117,16 @@ def upgrade(migrate_engine):
         sql.Column('extra', ks_sql.JsonBlob.impl),
         sql.Column('description', sql.Text),
         sql.Column('domain_id', sql.String(length=64), nullable=False),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8')
+
+    rule = sql.Table(
+        'rule', meta,
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('policy_id', sql.String(length=64), nullable=False),
+        sql.Column('service', sql.String(length=64), nullable=False),
+        sql.Column('action', sql.String(length=64), nullable=False),
+        sql.Column('content', ks_sql.JsonBlob.impl, nullable=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
@@ -159,7 +165,7 @@ def upgrade(migrate_engine):
         mysql_charset='utf8')
 
     # create all tables
-    tables = [region, service, endpoint, 
+    tables = [region, service, endpoint, rule, 
               domain, project, role, assignment,
               user, policy, token ]
 
@@ -181,9 +187,14 @@ def upgrade(migrate_engine):
                              project.c.name,
                              name='ixu_project_name_domain_id').create()
     migrate.UniqueConstraint(policy.c.domain_id,
-                             policy.c.service,
-                             policy.c.action,
-                             name='ixu_policy_domain_id_service_action').create()
+                             policy.c.name,
+                             name='ixu_policy_name_domain_id').create()
+    migrate.UniqueConstraint(policy.c.domain_id,
+                             policy.c.enabled,
+                             name='ixu_policy_enabled_domain_id').create()
+    migrate.UniqueConstraint(rule.c.service, rule.c.policy_id,
+                             rule.c.action,
+                             name='ixu_rule_policy_service_action').create()
     migrate.UniqueConstraint(domain.c.name,
                              name='ixu_domain_name').create()
 
@@ -217,7 +228,11 @@ def upgrade(migrate_engine):
 
         {'columns': [endpoint.c.service_id],
          'references': [service.c.id],
-         'name': 'fk_endpoint_service_id'}
+         'name': 'fk_endpoint_service_id'},
+             
+        {'columns': [rule.c.policy_id],
+         'references': [policy.c.id],
+         'name': 'fk_rule_policy_id'},
     ]
 
     for fkey in fkeys:

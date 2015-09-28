@@ -33,7 +33,7 @@ CONF = cfg.CONF
 
 @dependency.provider('policy_api')
 @dependency.requires('resource_api')
-class Manager(manager.Manager):
+class PolicyManager(manager.Manager):
     """Default pivot point for the Policy backend.
 
     See :mod:`keystone.common.manager.Manager` for more details on how this
@@ -102,8 +102,15 @@ class Manager(manager.Manager):
             raise
         return self.driver.enabled_policies_in_domain(domain_id)
 
+
+@dependency.provider('rule_api')
+@dependency.requires('resource_api')
+class RuleManager(manager.Manager):
+    pass
+
+
 @six.add_metaclass(abc.ABCMeta)
-class Driver(object):
+class PolicyDriver(object):
 
     def _get_list_limit(self):
         return CONF.policy.list_limit or CONF.list_limit
@@ -154,6 +161,45 @@ class Driver(object):
         """Remove a policy blob.
 
         :raises: keystone.exception.PolicyNotFound
+
+        """
+        raise exception.NotImplemented()  # pragma: no cover
+
+@six.add_metaclass(abc.ABCMeta)
+class RuleDriver(object):
+
+    @abc.abstractmethod
+    def create_rule(self, rule_id, rule):
+        """Store a rule.
+
+        :raises: keystone.exception.Conflict
+
+        """
+        raise exception.NotImplemented()  # pragma: no cover
+
+    @abc.abstractmethod
+    def get_rule(self, rule_id):
+        """Retrieve a specific rule's content.
+
+        :raises: keystone.exception.RuleNotFound
+
+        """
+        raise exception.NotImplemented()  # pragma: no cover
+
+    @abc.abstractmethod
+    def update_rule(self, rule_id, rule):
+        """Update a rule.
+
+        :raises: keystone.exception.RuleNotFound
+
+        """
+        raise exception.NotImplemented()  # pragma: no cover
+
+    @abc.abstractmethod
+    def delete_rule(self, rule_id):
+        """Remove a rule.
+
+        :raises: keystone.exception.RuleNotFound
 
         """
         raise exception.NotImplemented()  # pragma: no cover

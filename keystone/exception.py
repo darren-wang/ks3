@@ -245,6 +245,8 @@ class MetadataNotFound(NotFound):
     message_format = _("An unhandled exception has occurred:"
                        " Could not find metadata.")
 
+class RuleNotFound(NotFound):
+    message_format = _("Could not find rule: %(rule_id)s")
 
 class PolicyNotFound(NotFound):
     message_format = _("Could not find policy: %(policy_id)s")

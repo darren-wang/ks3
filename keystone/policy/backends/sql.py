@@ -15,21 +15,32 @@
 from keystone.common import sql
 from keystone import exception
 from keystone.policy.backends import rules
-
+from keystone import policy
 
 class PolicyModel(sql.ModelBase, sql.DictBase):
     __tablename__ = 'policy'
-    attributes = ['id', 'blob', 'name', 'enabled',
-                  'description', 'domain_id']
+    attributes = ['description', 'domain_id', 'enabled', 'id', 'name']
     id = sql.Column(sql.String(64), primary_key=True)
-    blob = sql.Column(sql.JsonBlob(), nullable=False)
     name = sql.Column(sql.String(64), nullable=False)
     domain_id = sql.Column(sql.String(64), sql.ForeignKey('domain.id'),
                            nullable=False)
     enabled = sql.Column(sql.Boolean, default=False, nullable=False)
-    description = sql.Column(sql.Text())
-    extra = sql.Column(sql.JsonBlob())
-    __table_args__ = (sql.UniqueConstraint('domain_id', 'name'), {})
+    description = sql.Column(sql.Text(), nullable=True)
+    __table_args__ = (sql.UniqueConstraint('domain_id', 'name'),
+                      sql.UniqueConstraint('domain_id', 'enabled'), {})
+
+
+class RuleModel(sql.ModelBase, sql.DictBase):
+    __tablename__ = 'rule'
+    attributes = ['id', 'policy_id', 'service', 'action', 'content']
+    id = sql.Column(sql.String(64), primary_key=True)
+    policy_id = sql.Column(sql.String(64), sql.ForeignKey('policy.id'),
+                            nullable=False)
+    service = sql.Column(sql.String(64), nullable=False)
+    action = sql.Column(sql.String(64), nullable=False)
+    content = sql.Column(sql.JsonBlob(), nullable=True)
+    __table_args__ = (sql.UniqueConstraint('policy_id', 'service', 'action'),
+                      {})
 
 
 class Policy(rules.Policy):
@@ -113,3 +124,6 @@ class Policy(rules.Policy):
         with sql.transaction() as session:
             policy_ref = self._get_policy(session, policy_id)
             session.delete(policy_ref)
+
+class Rule(policy.RuleDriver):
+    pass
