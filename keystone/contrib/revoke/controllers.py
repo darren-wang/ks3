@@ -19,7 +19,7 @@ from keystone.i18n import _
 
 
 @dependency.requires('revoke_api')
-class RevokeController(controller.V3Controller):
+class RevokeController(controller.Controller):
     @controller.protected()
     def list_revoke_events(self, context):
         since = context['query_string'].get('since')

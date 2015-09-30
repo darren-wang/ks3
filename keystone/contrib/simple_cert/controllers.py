@@ -21,7 +21,7 @@ CONF = cfg.CONF
 
 
 @dependency.requires('token_provider_api')
-class SimpleCert(controller.V3Controller):
+class SimpleCert(controller.Controller):
 
     def _get_certificate(self, name):
         try:

@@ -24,17 +24,13 @@ from oslo_log import log
 LOG = log.getLogger(__name__)
 
 
-MaxPolicyNum = 3
-MaxEnabledPolicyNum = 1
-
-
 @dependency.requires('policy_api')
-class PolicyV3(controller.V3Controller):
+class Policy(controller.Controller):
     collection_name = 'policies'
     member_name = 'policy'
 
     def __init__(self):
-        super(PolicyV3, self).__init__()
+        super(Policy, self).__init__()
         self.get_member_from_driver = self.policy_api.get_policy
 
     def _assert_policy_not_created(self, domain_id):
@@ -51,18 +47,18 @@ class PolicyV3(controller.V3Controller):
         ref = self._assign_unique_id(self._normalize_dict(policy))
         initiator = notifications._get_request_audit_info(context)
         ref = self.policy_api.create_policy(ref['id'], ref, initiator)
-        return PolicyV3.wrap_member(context, ref)
+        return Policy.wrap_member(context, ref)
 
     @controller.filterprotected('domain_id', 'name', 'enabled')
     def list_policies(self, context, filters):
-        hints = PolicyV3.build_driver_hints(context, filters)
+        hints = Policy.build_driver_hints(context, filters)
         refs = self.policy_api.list_policies(hints=hints)
-        return PolicyV3.wrap_collection(context, refs, hints=hints)
+        return Policy.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_policy(self, context, policy_id): # No query string
         ref = self.policy_api.get_policy(policy_id)
-        return PolicyV3.wrap_member(context, ref)
+        return Policy.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.policy_update, 'policy')
@@ -74,7 +70,7 @@ class PolicyV3(controller.V3Controller):
         policy_ref = self.policy_api.get_policy(policy_id)
         initiator = notifications._get_request_audit_info(context)
         ref = self.policy_api.update_policy(policy_id, policy, initiator)
-        return PolicyV3.wrap_member(context, ref)
+        return Policy.wrap_member(context, ref)
 
     @controller.protected()
     def delete_policy(self, context, policy_id):
@@ -82,30 +78,30 @@ class PolicyV3(controller.V3Controller):
         return self.policy_api.delete_policy(policy_id, initiator)
 
 @dependency.requires('rule_api')
-class Rule(controller.V3Controller):
+class Rule(controller.Controller):
     collection_name = 'rules'
     member_name = 'rule'
 
     def __init__(self):
-        super(PolicyV3, self).__init__()
+        super(Rule, self).__init__()
         self.get_member_from_driver = self.rule_api.get_rule
     
-    # supports for create_rule
-    def _assert_rule_created(self, domain_id, service, action):
+    # supports for create_rule()
+    def _is_rule_created(self, domain_id, service, action):
         rule_ref = self.rule_api.get_rule_in_domain(domain_id,
                                                      service, action)
-        if rule_ref:
-            return True
-        else:
-            return False
+        if rule_ref: return True
+        else: return False
 
     @controller.protected()
     @validation.validated(schema.rule_create, 'rule')
     def create_rule(self, context, rule):
-        created = self._assert_rule_created(rule['domain_id'],
-                                            rule['service'] , rule['action'])
+        created = self._is_rule_created(rule['domain_id'], rule['service'],
+                                        rule['action'])
+
         if created:
-            raise exception.ForbiddenAction("Policy has been created.")
+            raise exception.ForbiddenAction("Rule has been created.")
+
         ref = self._assign_unique_id(self._normalize_dict(rule))
         initiator = notifications._get_request_audit_info(context)
         ref = self.rule_api.create_policy(ref['id'], ref, initiator)
@@ -114,8 +110,8 @@ class Rule(controller.V3Controller):
     @controller.protected()
     @validation.validated(schema.rule_update, 'rule')
     def update_rule(self, context, rule_id, rule):
-        created = self._assert_rule_created(rule['domain_id'],
-                                            rule['service'] , rule['action'])
+        created = self._is_rule_created(rule['domain_id'],rule['service'],
+                                        rule['action'])
         if not created:
             raise exception.ForbiddenAction("Rule has not been created.")
 
@@ -129,8 +125,8 @@ class Rule(controller.V3Controller):
         ref = self.rule_api.get_rule(rule_id)
         return Rule.wrap_member(context, ref)
 
-    @controller.filterprotected('domain_id', 'policy_id',
-                                'service', 'action')
+    @controller.filterprotected('domain_id', 'policy_id','service',
+                                'action')
     def list_rules(self, context, filters):
         hints = Rule.build_driver_hints(context, filters)
         refs = self.rule_api.list_rules(hints=hints)

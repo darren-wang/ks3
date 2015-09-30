@@ -36,7 +36,7 @@ class Routers(wsgi.RoutersBase):
 
     def append_v3_routers(self, mapper, routers):
 
-        project_controller = controllers.ProjectAssignmentV3()
+        project_controller = controllers.ProjectAssignment()
         self._add_resource(
             mapper, project_controller,
             path='/users/{user_id}/projects',
@@ -50,7 +50,7 @@ class Routers(wsgi.RoutersBase):
             router.Router(controllers.RoleV3(), 'roles', 'role',
                           resource_descriptions=self.v3_resources))
 
-        grant_controller = controllers.GrantAssignmentV3()
+        grant_controller = controllers.GrantAssignment()
         self._add_resource(
             mapper, grant_controller,
             path='/projects/{project_id}/users/{user_id}/roles/{role_id}',
@@ -137,7 +137,7 @@ class Routers(wsgi.RoutersBase):
             })
 
         routers.append(
-            router.Router(controllers.RoleAssignmentV3(),
+            router.Router(controllers.RoleAssignment(),
                           'role_assignments', 'role_assignment',
                           resource_descriptions=self.v3_resources,
                           is_entity_implemented=False))

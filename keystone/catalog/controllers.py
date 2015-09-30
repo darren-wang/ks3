@@ -29,7 +29,7 @@ INTERFACES = ['public', 'internal', 'admin']
 
 
 @dependency.requires('catalog_api')
-class RegionV3(controller.V3Controller):
+class Region(controller.Controller):
     collection_name = 'regions'
     member_name = 'region'
 
@@ -59,19 +59,19 @@ class RegionV3(controller.V3Controller):
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.create_region(ref, initiator)
         return wsgi.render_response(
-            RegionV3.wrap_member(context, ref),
+            Region.wrap_member(context, ref),
             status=(201, 'Created'))
 
     @controller.filterprotected('parent_region_id')
     def list_regions(self, context, filters):
-        hints = RegionV3.build_driver_hints(context, filters)
+        hints = Region.build_driver_hints(context, filters)
         refs = self.catalog_api.list_regions(hints)
-        return RegionV3.wrap_collection(context, refs, hints=hints)
+        return Region.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_region(self, context, region_id):
         ref = self.catalog_api.get_region(region_id)
-        return RegionV3.wrap_member(context, ref)
+        return Region.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.region_update, 'region')
@@ -79,7 +79,7 @@ class RegionV3(controller.V3Controller):
         self._require_matching_id(region_id, region)
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.update_region(region_id, region, initiator)
-        return RegionV3.wrap_member(context, ref)
+        return Region.wrap_member(context, ref)
 
     @controller.protected()
     def delete_region(self, context, region_id):
@@ -88,12 +88,12 @@ class RegionV3(controller.V3Controller):
 
 
 @dependency.requires('catalog_api')
-class ServiceV3(controller.V3Controller):
+class Service(controller.Controller):
     collection_name = 'services'
     member_name = 'service'
 
     def __init__(self):
-        super(ServiceV3, self).__init__()
+        super(Service, self).__init__()
         self.get_member_from_driver = self.catalog_api.get_service
 
     @controller.protected()
@@ -102,18 +102,18 @@ class ServiceV3(controller.V3Controller):
         ref = self._assign_unique_id(self._normalize_dict(service))
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.create_service(ref['id'], ref, initiator)
-        return ServiceV3.wrap_member(context, ref)
+        return Service.wrap_member(context, ref)
 
     @controller.filterprotected('type', 'name')
     def list_services(self, context, filters):
-        hints = ServiceV3.build_driver_hints(context, filters)
+        hints = Service.build_driver_hints(context, filters)
         refs = self.catalog_api.list_services(hints=hints)
-        return ServiceV3.wrap_collection(context, refs, hints=hints)
+        return Service.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_service(self, context, service_id):
         ref = self.catalog_api.get_service(service_id)
-        return ServiceV3.wrap_member(context, ref)
+        return Service.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.service_update, 'service')
@@ -121,7 +121,7 @@ class ServiceV3(controller.V3Controller):
         self._require_matching_id(service_id, service)
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.update_service(service_id, service, initiator)
-        return ServiceV3.wrap_member(context, ref)
+        return Service.wrap_member(context, ref)
 
     @controller.protected()
     def delete_service(self, context, service_id):
@@ -130,17 +130,17 @@ class ServiceV3(controller.V3Controller):
 
 
 @dependency.requires('catalog_api')
-class EndpointV3(controller.V3Controller):
+class Endpoint(controller.Controller):
     collection_name = 'endpoints'
     member_name = 'endpoint'
 
     def __init__(self):
-        super(EndpointV3, self).__init__()
+        super(Endpoint, self).__init__()
         self.get_member_from_driver = self.catalog_api.get_endpoint
 
     @classmethod
     def wrap_member(cls, context, ref):
-        return super(EndpointV3, cls).wrap_member(context, ref)
+        return super(Endpoint, cls).wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.endpoint_create, 'endpoint')
@@ -148,18 +148,18 @@ class EndpointV3(controller.V3Controller):
         ref = self._assign_unique_id(self._normalize_dict(endpoint))
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.create_endpoint(ref['id'], ref, initiator)
-        return EndpointV3.wrap_member(context, ref)
+        return Endpoint.wrap_member(context, ref)
 
     @controller.filterprotected('interface', 'service_id', 'region_id')
     def list_endpoints(self, context, filters):
-        hints = EndpointV3.build_driver_hints(context, filters)
+        hints = Endpoint.build_driver_hints(context, filters)
         refs = self.catalog_api.list_endpoints(hints=hints)
-        return EndpointV3.wrap_collection(context, refs, hints=hints)
+        return Endpoint.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_endpoint(self, context, endpoint_id):
         ref = self.catalog_api.get_endpoint(endpoint_id)
-        return EndpointV3.wrap_member(context, ref)
+        return Endpoint.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.endpoint_update, 'endpoint')
@@ -168,7 +168,7 @@ class EndpointV3(controller.V3Controller):
         initiator = notifications._get_request_audit_info(context)
         ref = self.catalog_api.update_endpoint(endpoint_id, endpoint,
                                                initiator)
-        return EndpointV3.wrap_member(context, ref)
+        return Endpoint.wrap_member(context, ref)
 
     @controller.protected()
     def delete_endpoint(self, context, endpoint_id):

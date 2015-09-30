@@ -38,33 +38,33 @@ LOG = log.getLogger(__name__)
 
 
 @dependency.requires('assignment_api', 'resource_api')
-class ProjectAssignmentV3(controller.V3Controller):
+class ProjectAssignment(controller.Controller):
     """The V3 Project APIs that are processing assignments."""
 
     collection_name = 'projects'
     member_name = 'project'
 
     def __init__(self):
-        super(ProjectAssignmentV3, self).__init__()
+        super(ProjectAssignment, self).__init__()
         self.get_member_from_driver = self.resource_api.get_project
 
     @controller.filterprotected('enabled', 'name', 'domain_id')
     def list_user_projects(self, context, filters, user_id):
-        hints = ProjectAssignmentV3.build_driver_hints(context, filters)
+        hints = ProjectAssignment.build_driver_hints(context, filters)
         refs = self.assignment_api.list_projects_for_user(user_id,
                                                           hints=hints)
-        return ProjectAssignmentV3.wrap_collection(context, refs, hints=hints)
+        return ProjectAssignment.wrap_collection(context, refs, hints=hints)
 
 
 @dependency.requires('role_api')
-class RoleV3(controller.V3Controller):
+class Role(controller.Controller):
     """The V3 Role CRUD APIs."""
 
     collection_name = 'roles'
     member_name = 'role'
 
     def __init__(self):
-        super(RoleV3, self).__init__()
+        super(Role, self).__init__()
         self.get_member_from_driver = self.role_api.get_role
 
     @controller.protected()
@@ -82,18 +82,18 @@ class RoleV3(controller.V3Controller):
 
         initiator = notifications._get_request_audit_info(context)
         ref = self.role_api.create_role(ref['id'], ref, initiator)
-        return RoleV3.wrap_member(context, ref)
+        return Role.wrap_member(context, ref)
 
     @controller.filterprotected('name', 'domain_id')
     def list_roles(self, context, filters):
-        hints = RoleV3.build_driver_hints(context, filters)
+        hints = Role.build_driver_hints(context, filters)
         refs = self.role_api.list_roles(hints=hints)
-        return RoleV3.wrap_collection(context, refs, hints=hints)
+        return Role.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_role(self, context, role_id):
         ref = self.role_api.get_role(role_id)
-        return RoleV3.wrap_member(context, ref)
+        return Role.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.role_update, 'role')
@@ -103,7 +103,7 @@ class RoleV3(controller.V3Controller):
             role_id, role, self.role_api.get_role)
         initiator = notifications._get_request_audit_info(context)
         ref = self.role_api.update_role(role_id, role, initiator)
-        return RoleV3.wrap_member(context, ref)
+        return Role.wrap_member(context, ref)
 
     @controller.protected()
     def delete_role(self, context, role_id):
@@ -113,14 +113,14 @@ class RoleV3(controller.V3Controller):
 
 @dependency.requires('assignment_api', 'identity_api', 'resource_api',
                      'role_api')
-class GrantAssignmentV3(controller.V3Controller):
+class GrantAssignment(controller.Controller):
     """The V3 Grant Assignment APIs."""
 
     collection_name = 'roles'
     member_name = 'role'
 
     def __init__(self):
-        super(GrantAssignmentV3, self).__init__()
+        super(GrantAssignment, self).__init__()
         self.get_member_from_driver = self.role_api.get_role
 
     def _require_domain_xor_project(self, domain_id, project_id):
@@ -195,7 +195,7 @@ class GrantAssignmentV3(controller.V3Controller):
         refs = self.assignment_api.list_grants(
             user_id, group_id, domain_id, project_id,
             self._check_if_inherited(context))
-        return GrantAssignmentV3.wrap_collection(context, refs)
+        return GrantAssignment.wrap_collection(context, refs)
 
     @controller.protected(callback=_check_grant_protection)
     def check_grant(self, context, role_id, user_id=None,
@@ -225,7 +225,7 @@ class GrantAssignmentV3(controller.V3Controller):
 
 
 @dependency.requires('assignment_api', 'identity_api', 'resource_api')
-class RoleAssignmentV3(controller.V3Controller):
+class RoleAssignment(controller.Controller):
     """The V3 Role Assignment APIs, really just list_role_assignment()."""
 
     # TODO(henry-nash): The current implementation does not provide a full

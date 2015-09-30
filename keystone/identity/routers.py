@@ -22,7 +22,7 @@ from keystone.identity import controllers
 class Routers(wsgi.RoutersBase):
 
     def append_v3_routers(self, mapper, routers):
-        user_controller = controllers.UserV3()
+        user_controller = controllers.User()
         routers.append(
             router.Router(user_controller,
                           'users', 'user',

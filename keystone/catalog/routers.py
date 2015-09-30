@@ -20,7 +20,7 @@ from keystone.common import wsgi
 class Routers(wsgi.RoutersBase):
 
     def append_v3_routers(self, mapper, routers):
-        regions_controller = controllers.RegionV3()
+        regions_controller = controllers.Region()
         routers.append(router.Router(regions_controller,
                                      'regions', 'region',
                                      resource_descriptions=self.v3_resources))
@@ -32,9 +32,9 @@ class Routers(wsgi.RoutersBase):
             action='create_region_with_id',
             conditions=dict(method=['PUT']))
 
-        routers.append(router.Router(controllers.ServiceV3(),
+        routers.append(router.Router(controllers.Service(),
                                      'services', 'service',
                                      resource_descriptions=self.v3_resources))
-        routers.append(router.Router(controllers.EndpointV3(),
+        routers.append(router.Router(controllers.Endpoint(),
                                      'endpoints', 'endpoint',
                                      resource_descriptions=self.v3_resources))

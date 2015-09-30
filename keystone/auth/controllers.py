@@ -346,7 +346,7 @@ class AuthInfo(object):
 
 @dependency.requires('assignment_api', 'catalog_api', 'identity_api',
                      'resource_api', 'token_provider_api')
-class Auth(controller.V3Controller):
+class Auth(controller.Controller):
 
     # Note(atiwari): From V3 auth controller code we are
     # calling protection() wrappers, so we need to setup
@@ -565,7 +565,7 @@ class Auth(controller.V3Controller):
                 _('A project-scoped token is required to produce a service '
                   'catalog.'))
 
-        # The V3Controller base methods mostly assume that you're returning
+        # The Controller base methods mostly assume that you're returning
         # either a collection or a single element from a collection, neither of
         # which apply to the catalog. Because this is a special case, this
         # re-implements a tiny bit of work done by the base controller (such as

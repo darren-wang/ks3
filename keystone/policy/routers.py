@@ -19,6 +19,10 @@ from keystone.policy import controllers
 class Routers(wsgi.RoutersBase):
 
     def append_v3_routers(self, mapper, routers):
-        policy_controller = controllers.PolicyV3()
+        policy_controller = controllers.Policy()
         routers.append(router.Router(policy_controller, 'policies', 'policy',
+                                     resource_descriptions=self.v3_resources))
+
+        rule_controller = controllers.Rule()
+        routers.append(router.Router(rule_controller, 'rules', 'rule',
                                      resource_descriptions=self.v3_resources))

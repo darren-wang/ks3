@@ -37,12 +37,12 @@ LOG = log.getLogger(__name__)
 
 @dependency.requires('resource_api', 'identity_api', 'role_api',
                      'assignment_api')
-class DomainV3(controller.V3Controller):
+class Domain(controller.Controller):
     collection_name = 'domains'
     member_name = 'domain'
 
     def __init__(self):
-        super(DomainV3, self).__init__()
+        super(Domain, self).__init__()
         self.get_member_from_driver = self.resource_api.get_domain
 
     def _create_init_user(self, domain_id, initiator):
@@ -76,7 +76,7 @@ class DomainV3(controller.V3Controller):
         ref = self._assign_unique_id(self._normalize_dict(domain))
         initiator = notifications._get_request_audit_info(context)
         ref = self.resource_api.create_domain(ref['id'], ref, initiator)
-        domain_ref = DomainV3.wrap_member(context, ref)
+        domain_ref = Domain.wrap_member(context, ref)
         user_ref = self._create_init_user(ref['id'], initiator)
         role_ref = self._create_init_role(ref['id'], initiator)
         self.assignment_api.create_grant(role_ref['role']['id'],
@@ -88,14 +88,14 @@ class DomainV3(controller.V3Controller):
 
     @controller.filterprotected('enabled', 'name')
     def list_domains(self, context, filters):
-        hints = DomainV3.build_driver_hints(context, filters)
+        hints = Domain.build_driver_hints(context, filters)
         refs = self.resource_api.list_domains(hints=hints)
-        return DomainV3.wrap_collection(context, refs, hints=hints)
+        return Domain.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_domain(self, context, domain_id):
         ref = self.resource_api.get_domain(domain_id)
-        return DomainV3.wrap_member(context, ref)
+        return Domain.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.domain_update, 'domain')
@@ -103,7 +103,7 @@ class DomainV3(controller.V3Controller):
         self._require_matching_id(domain_id, domain)
         initiator = notifications._get_request_audit_info(context)
         ref = self.resource_api.update_domain(domain_id, domain, initiator)
-        return DomainV3.wrap_member(context, ref)
+        return Domain.wrap_member(context, ref)
 
     @controller.protected()
     def delete_domain(self, context, domain_id):
@@ -112,12 +112,12 @@ class DomainV3(controller.V3Controller):
 
 
 @dependency.requires('resource_api')
-class ProjectV3(controller.V3Controller):
+class Project(controller.Controller):
     collection_name = 'projects'
     member_name = 'project'
 
     def __init__(self):
-        super(ProjectV3, self).__init__()
+        super(Project, self).__init__()
         self.get_member_from_driver = self.resource_api.get_project
 
     @controller.protected()
@@ -128,14 +128,14 @@ class ProjectV3(controller.V3Controller):
         initiator = notifications._get_request_audit_info(context)
         ref = self.resource_api.create_project(ref['id'], ref,
                                                initiator=initiator)
-        return ProjectV3.wrap_member(context, ref)
+        return Project.wrap_member(context, ref)
 
     @controller.filterprotected('domain_id', 'enabled', 'name',
                                 'parent_id')
     def list_projects(self, context, filters):
-        hints = ProjectV3.build_driver_hints(context, filters)
+        hints = Project.build_driver_hints(context, filters)
         refs = self.resource_api.list_projects(hints=hints)
-        return ProjectV3.wrap_collection(context, refs, hints=hints)
+        return Project.wrap_collection(context, refs, hints=hints)
 
     def _expand_project_ref(self, context, ref):
         params = context['query_string']
@@ -167,7 +167,7 @@ class ProjectV3(controller.V3Controller):
         if parents_as_list:
             parents = self.resource_api.list_project_parents(
                 ref['id'], user_id)
-            ref['parents'] = [ProjectV3.wrap_member(context, p)
+            ref['parents'] = [Project.wrap_member(context, p)
                               for p in parents]
         elif parents_as_ids:
             ref['parents'] = self.resource_api.get_project_parents_as_ids(ref)
@@ -175,7 +175,7 @@ class ProjectV3(controller.V3Controller):
         if subtree_as_list:
             subtree = self.resource_api.list_projects_in_subtree(
                 ref['id'], user_id)
-            ref['subtree'] = [ProjectV3.wrap_member(context, p)
+            ref['subtree'] = [Project.wrap_member(context, p)
                               for p in subtree]
         elif subtree_as_ids:
             ref['subtree'] = self.resource_api.get_projects_in_subtree_as_ids(
@@ -185,7 +185,7 @@ class ProjectV3(controller.V3Controller):
     def get_project(self, context, project_id):
         ref = self.resource_api.get_project(project_id)
         self._expand_project_ref(context, ref)
-        return ProjectV3.wrap_member(context, ref)
+        return Project.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.project_update, 'project')
@@ -196,7 +196,7 @@ class ProjectV3(controller.V3Controller):
         initiator = notifications._get_request_audit_info(context)
         ref = self.resource_api.update_project(project_id, project,
                                                initiator=initiator)
-        return ProjectV3.wrap_member(context, ref)
+        return Project.wrap_member(context, ref)
 
     @controller.protected()
     def delete_project(self, context, project_id):

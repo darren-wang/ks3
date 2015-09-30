@@ -78,7 +78,7 @@ def protected(callback=None):
     entities) should pass in a callback function, that will be subsequently
     called to check protection for these multiple entities. This callback
     function should gather the appropriate entities needed and then call
-    check_protection() in the V3Controller class.
+    check_protection() in the Controller class.
 
     """
     def wrapper(f):
@@ -216,7 +216,7 @@ def filterprotected(*filters):
 
 
 @dependency.requires('policy_api', 'token_provider_api')
-class V3Controller(wsgi.Application):
+class Controller(wsgi.Application):
     """Base controller class for Identity API v3.
 
     Child classes should set the ``collection_name`` and ``member_name`` class
@@ -239,7 +239,7 @@ class V3Controller(wsgi.Application):
 
     @classmethod
     def base_url(cls, context, path=None):
-        endpoint = super(V3Controller, cls).base_url(context, 'public')
+        endpoint = super(Controller, cls).base_url(context, 'public')
         if not path:
             path = cls.collection_name
 

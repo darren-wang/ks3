@@ -31,12 +31,12 @@ LOG = log.getLogger(__name__)
 
 
 @dependency.requires('identity_api')
-class UserV3(controller.V3Controller):
+class User(controller.Controller):
     collection_name = 'users'
     member_name = 'user'
 
     def __init__(self):
-        super(UserV3, self).__init__()
+        super(User, self).__init__()
         self.get_member_from_driver = self.identity_api.get_user
 
     @controller.protected()
@@ -49,20 +49,20 @@ class UserV3(controller.V3Controller):
         ref = self._normalize_domain_id(context, ref)
         initiator = notifications._get_request_audit_info(context)
         ref = self.identity_api.create_user(ref, initiator)
-        return UserV3.wrap_member(context, ref)
+        return User.wrap_member(context, ref)
 
     @controller.filterprotected('domain_id', 'enabled', 'name')
     def list_users(self, context, filters):
-        hints = UserV3.build_driver_hints(context, filters)
+        hints = User.build_driver_hints(context, filters)
         refs = self.identity_api.list_users(
             domain_scope=self._get_domain_id_for_list_request(context),
             hints=hints)
-        return UserV3.wrap_collection(context, refs, hints=hints)
+        return User.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
     def get_user(self, context, user_id):
         ref = self.identity_api.get_user(user_id)
-        return UserV3.wrap_member(context, ref)
+        return User.wrap_member(context, ref)
 
     def _update_user(self, context, user_id, user):
         self._require_matching_id(user_id, user)
@@ -70,7 +70,7 @@ class UserV3(controller.V3Controller):
             user_id, user, self.identity_api.get_user)
         initiator = notifications._get_request_audit_info(context)
         ref = self.identity_api.update_user(user_id, user, initiator)
-        return UserV3.wrap_member(context, ref)
+        return User.wrap_member(context, ref)
 
     @controller.protected()
     @validation.validated(schema.user_update, 'user')

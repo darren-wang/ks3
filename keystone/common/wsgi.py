@@ -276,7 +276,7 @@ class Application(BaseApplication):
         req_method = req.environ['REQUEST_METHOD']
         controller = importutils.import_class('keystone.common.controller')
         code = None
-        if isinstance(self, controller.V3Controller) and req_method == 'POST':
+        if isinstance(self, controller.Controller) and req_method == 'POST':
             code = (201, 'Created')
         return code
 

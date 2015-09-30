@@ -24,11 +24,11 @@ class Routers(wsgi.RoutersBase):
 
     def append_v3_routers(self, mapper, routers):
         routers.append(
-            router.Router(controllers.DomainV3(),
+            router.Router(controllers.Domain(),
                           'domains', 'domain',
                           resource_descriptions=self.v3_resources))
 
         routers.append(
-            router.Router(controllers.ProjectV3(),
+            router.Router(controllers.Project(),
                           'projects', 'project',
                           resource_descriptions=self.v3_resources))
