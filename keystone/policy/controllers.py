@@ -33,21 +33,35 @@ class Policy(controller.Controller):
         super(Policy, self).__init__()
         self.get_member_from_driver = self.policy_api.get_policy
 
-    def _assert_policy_not_created(self, domain_id):
+    def _assert_domain_has_no_policy(self, domain_id):
         policy_refs = self.policy_api.list_policies_in_domain(
                             domain_id)
-        policy_amount = len(policy_refs)
-        if policy_amount >= 1:
+        if len(policy_refs) >= 1:
             raise exception.ForbiddenAction("Policy has been created.")
 
     @controller.protected()
     @validation.validated(schema.policy_create, 'policy')
     def create_policy(self, context, policy):
-        self._assert_policy_not_created(policy['domain_id'])
-        ref = self._assign_unique_id(self._normalize_dict(policy))
+        self._assert_domain_has_no_policy(policy['domain_id'])
+        
+        rule_set = policy.pop('rule_set') # rule_set is a list
+        
+        policy_ref = self._assign_unique_id(self._normalize_dict(policy))
         initiator = notifications._get_request_audit_info(context)
-        ref = self.policy_api.create_policy(ref['id'], ref, initiator)
-        return Policy.wrap_member(context, ref)
+        policy_id = policy_ref['id']
+
+        # create each rule in this policy
+        for p in rule_set: # for each service
+            d = {'policy_id':policy_id, 'service': p['service']}
+            for rule in p['rules'].iteritems():
+                d['action'] = rule[0]
+                d['content'] = rule[1]
+                rule_ref = self._assign_unique_id(self._normalize_dict(d))
+                self.rule_api.create_rule(rule_ref['id'], rule_ref,
+                                          initiator)
+        
+        policy_ref = self.policy_api.create_policy(ref['id'], ref, initiator)
+        return Policy.wrap_member(context, policy_ref)
 
     @controller.filterprotected('domain_id', 'name', 'enabled')
     def list_policies(self, context, filters):

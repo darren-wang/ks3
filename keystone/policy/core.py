@@ -33,7 +33,7 @@ CONF = cfg.CONF
 
 
 @dependency.provider('policy_api')
-@dependency.requires('resource_api')
+@dependency.requires('resource_api', 'rule_api')
 class PolicyManager(manager.Manager):
     """Default pivot point for the Policy backend.
 
@@ -47,6 +47,7 @@ class PolicyManager(manager.Manager):
         super(Manager, self).__init__(CONF.policy.driver)
 
     def create_policy(self, policy_id, policy, initiator=None):
+        
         ref = self.driver.create_policy(policy_id, policy)
         notifications.Audit.created(self._POLICY, policy_id, initiator)
         return ref
