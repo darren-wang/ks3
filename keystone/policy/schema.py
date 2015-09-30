@@ -39,7 +39,7 @@ policy_update = {
 }
 
 _rule_properties = {
-    'policy_id': parameter_types.id_string,
+    'domain_id': parameter_types.id_string,
     'service': {
         'type': 'string'
     },
@@ -54,7 +54,7 @@ _rule_properties = {
 rule_create = {
     'type': 'object',
     'properties': _rule_properties,
-    'required': ['policy_id', 'service', 'action', 'content'],
+    'required': ['domain_id', 'service', 'action', 'content'],
     'additionalProperties': False
 }
 

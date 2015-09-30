@@ -87,10 +87,10 @@ def upgrade(migrate_engine):
         sql.Column('name', sql.String(length=64), nullable=False),
         sql.Column('domain_id', sql.String(length=64), nullable=False),
         sql.Column('description', sql.Text, nullable=True),
-        sql.Column('enabled', sql.Boolean, nullable=False, default=False),
+        sql.Column('enabled', sql.Boolean, nullable=False, default=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
-
+ 
     project = sql.Table(
         'project', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
@@ -165,7 +165,7 @@ def upgrade(migrate_engine):
         mysql_charset='utf8')
 
     # create all tables
-    tables = [region, service, endpoint, rule, 
+    tables = [region, service, endpoint, rule,
               domain, project, role, assignment,
               user, policy, token ]
 
@@ -232,7 +232,7 @@ def upgrade(migrate_engine):
              
         {'columns': [rule.c.policy_id],
          'references': [policy.c.id],
-         'name': 'fk_rule_policy_id'},
+         'name': 'fk_rule_policy_id'}
     ]
 
     for fkey in fkeys:
