@@ -50,7 +50,7 @@ class Policy(rules.Policy):
         with sql.transaction() as session:
             policy_ref = PolicyModel.from_dict(policy)
             session.add(policy_ref)
-        return policy_ref.to_dict()
+            return policy_ref.to_dict()
 
     @sql.truncated
     def list_policies(self, hints):
@@ -118,12 +118,56 @@ class Policy(rules.Policy):
                 if attr != 'id':
                     setattr(policy_ref, attr, getattr(new_policy, attr))
             policy_ref.extra = new_policy.extra
-        return policy_ref.to_dict(include_extra_dict = True)
+            return policy_ref.to_dict(include_extra_dict = True)
 
     def delete_policy(self, policy_id):
         with sql.transaction() as session:
             policy_ref = self._get_policy(session, policy_id)
             session.delete(policy_ref)
 
+
 class Rule(policy.RuleDriver):
-    pass
+
+    @sql.handle_conflicts(conflict_type='rule')
+    def create_rule(self, rule_id, rule):
+        with sql.transaction() as session:
+            rule_ref = RuleModel.from_dict(rule)
+            session.add(rule_ref)
+            return rule_ref.to_dict()
+    
+    def _get_rule(self, session, rule_id):
+        """Private method to get a rule model object (NOT a dictionary)."""
+        ref = session.query(RuleModel).get(rule_id)
+        if not ref:
+            raise exception.RuleNotFound(rule_id=rule_id)
+        return ref
+    
+    def get_rule(self, rule_id):
+        with sql.transaction() as session:
+            return self._get_rule(session, rule_id).to_dict()
+
+    @sql.truncated
+    def list_rules(self):
+        with sql.transaction() as session:
+            query = session.query(RuleModel)
+            rule_refs = sql.filter_limit_query(RuleModel, query, hints)
+            return [rule_ref.to_dict() for rule_ref in rule_refs]
+
+    @sql.handle_conflicts(conflict_type='rule')
+    def update_rule(self, rule_id, rule):
+        with sql.transaction() as session:
+            rule_ref = self._get_rule(session, rule_id)
+            old_rule_dict = rule_ref.to_dict()
+            for k in rule:
+                old_rule_dict[k] = rule[k]
+            new_rule = RuleModel.from_dict(old_rule_dict)
+            for attr in RuleModel.attributes:
+                if attr != 'id':
+                    setattr(rule_ref, attr, getattr(new_rule, attr))
+            rule_ref.extra = new_rule.extra
+            return rule_ref.to_dict(include_extra_dict = True)
+
+    def delete_rule(self, rule_id):
+        with sql.transaction() as session:
+            rule_ref = self._get_policy(session, rule_id)
+            session.delete(rule_ref)

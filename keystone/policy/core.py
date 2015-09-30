@@ -11,6 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+from openstackclient.identity.v3.mapping import _RulesReader
 
 """Main entry point into the Policy service."""
 
@@ -106,7 +107,42 @@ class PolicyManager(manager.Manager):
 @dependency.provider('rule_api')
 @dependency.requires('resource_api')
 class RuleManager(manager.Manager):
-    pass
+    _RULE = 'rule'
+    
+    def __init__(self):
+        super(Manager, self).__init__(CONF.rule.driver)
+    
+    def create_rule(self, rule_id, rule, initiator=None):
+        ref = self.driver.create_rule(rule_id, rule)
+        notifications.Audit.created(self._RULE, rule_id, initiator)
+        return ref
+    
+    def update_rule(self, rule_id, rule, initiator=None):
+        if 'id' in rule and rule_id != rule['id']:
+            raise exception.ValidationError('Cannot change rule ID')
+        try:
+            ref = self.driver.update_rule(rule_id, rule)
+        except exception.NotFound:
+            raise exception.RuleNotFound(rule_id=rule_id)
+        notifications.Audit.updated(self._RULE, rule_id, initiator)
+        return ref
+    
+    def get_rule(self):
+        try:
+            return self.driver.get_rule(rule_id)
+        except exception.NotFound:
+            raise exception.RuleNotFound(rule_id=rule_id)
+
+    def list_rules(self):
+        return self.driver.list_rules(hints or driver_hints.Hints())
+    
+    def delete_rules(self):
+        try:
+            ret = self.driver.delete_rule(rule_id)
+        except exception.NotFound:
+            raise exception.RuleNotFound(rule_id=rule_id)
+        notifications.Audit.deleted(self._RULE, rule_id, initiator)
+        return ret
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -165,6 +201,7 @@ class PolicyDriver(object):
         """
         raise exception.NotImplemented()  # pragma: no cover
 
+
 @six.add_metaclass(abc.ABCMeta)
 class RuleDriver(object):
 
@@ -185,6 +222,15 @@ class RuleDriver(object):
 
         """
         raise exception.NotImplemented()  # pragma: no cover
+
+    @abc.abstractmethod
+    def list_rules(self):
+        """Retrieve a specific rule's content.
+
+        :raises: keystone.exception.RuleNotFound
+
+        """
+        raise exception.NotImplemented()
 
     @abc.abstractmethod
     def update_rule(self, rule_id, rule):
