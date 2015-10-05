@@ -19,7 +19,7 @@ _policy_properties = {
     'name': parameter_types.name,
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
-    'policy': {
+    'rule_set': {
         'type': 'string'
     }
 }
@@ -27,7 +27,7 @@ _policy_properties = {
 policy_create = {
     'type': 'object',
     'properties': _policy_properties,
-    'required': ['domain_id', 'policy'],
+    'required': ['domain_id', 'rule_set'],
     'additionalProperties': True
 }
 

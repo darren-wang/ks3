@@ -45,9 +45,13 @@ class PolicyManager(manager.Manager):
 
     def __init__(self):
         super(Manager, self).__init__(CONF.policy.driver)
-
+    
+    def domain_has_policy(self, domain_id):
+        policy_refs = self.list_policies_in_domain(domain_id)
+        if policy_refs: return True
+        else: return False
+    
     def create_policy(self, policy_id, policy, initiator=None):
-        
         ref = self.driver.create_policy(policy_id, policy)
         notifications.Audit.created(self._POLICY, policy_id, initiator)
         return ref
@@ -80,21 +84,8 @@ class PolicyManager(manager.Manager):
         notifications.Audit.deleted(self._POLICY, policy_id, initiator)
         return ret
 
-    def list_policies_ids_from_domain_ids(self, domain_ids):
-        # (darren) Validate the existence of domains before calling the
-        # driver.
-        for domain_id in domain_ids:
-            try:
-                self.resource_api.get_domain(domain_id)
-            except exception.DomainNotFound:
-                raise
-        return self.driver.list_policies_ids_from_domain_ids(domain_ids)
-
     def list_policies_in_domain(self, domain_id):
-        try:
-            self.resource_api.get_domain(domain_id)
-        except exception.DomainNotFound:
-            raise
+        self.resource_api.get_domain(domain_id) # assert domain exists
         return self.driver.list_policies_in_domain(domain_id)
     
     def enabled_policies_in_domain(self, domain_id):
@@ -112,7 +103,12 @@ class RuleManager(manager.Manager):
     
     def __init__(self):
         super(Manager, self).__init__(CONF.rule.driver)
-    
+
+    def rule_created(self, domain_id, service, action):
+        rule_ref = self.get_rule_in_domain(domain_id, service, action)
+        if rule_ref: return True
+        else: return False
+
     def create_rule(self, rule_id, rule, initiator=None):
         ref = self.driver.create_rule(rule_id, rule)
         notifications.Audit.created(self._RULE, rule_id, initiator)
@@ -128,23 +124,26 @@ class RuleManager(manager.Manager):
         notifications.Audit.updated(self._RULE, rule_id, initiator)
         return ref
     
-    def get_rule(self):
+    def get_rule(self, rule_id):
         try:
             return self.driver.get_rule(rule_id)
         except exception.NotFound:
             raise exception.RuleNotFound(rule_id=rule_id)
 
-    def list_rules(self):
+    def list_rules(self, hints=None):
         return self.driver.list_rules(hints or driver_hints.Hints())
     
-    def delete_rules(self):
+    def delete_rule(self, rule_id, initiator):
         try:
             ret = self.driver.delete_rule(rule_id)
         except exception.NotFound:
             raise exception.RuleNotFound(rule_id=rule_id)
         notifications.Audit.deleted(self._RULE, rule_id, initiator)
         return ret
-
+    
+    def delelte_rules(self, policy_id):
+        ret = self.driver.delete_rules(policy_id)
+        return ret
 
 @six.add_metaclass(abc.ABCMeta)
 class PolicyDriver(object):

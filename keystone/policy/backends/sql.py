@@ -147,7 +147,7 @@ class Rule(policy.RuleDriver):
             return self._get_rule(session, rule_id).to_dict()
 
     @sql.truncated
-    def list_rules(self):
+    def list_rules(self, hints):
         with sql.transaction() as session:
             query = session.query(RuleModel)
             rule_refs = sql.filter_limit_query(RuleModel, query, hints)
@@ -169,5 +169,12 @@ class Rule(policy.RuleDriver):
 
     def delete_rule(self, rule_id):
         with sql.transaction() as session:
-            rule_ref = self._get_policy(session, rule_id)
+            rule_ref = self._get_rule(session, rule_id)
             session.delete(rule_ref)
+    
+    def delelte_rules(self, policy_id):
+        with sql.transaction() as session:
+            query = session.query(RuleModel)
+            rule_refs = query.filter_by(policy_id=policy_id)
+            for rule_ref in rule_refs:
+                session.delete(rule_ref)
