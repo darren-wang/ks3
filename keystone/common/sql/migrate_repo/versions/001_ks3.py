@@ -187,11 +187,7 @@ def upgrade(migrate_engine):
                              project.c.name,
                              name='ixu_project_name_domain_id').create()
     migrate.UniqueConstraint(policy.c.domain_id,
-                             policy.c.name,
-                             name='ixu_policy_name_domain_id').create()
-    migrate.UniqueConstraint(policy.c.domain_id,
-                             policy.c.enabled,
-                             name='ixu_policy_enabled_domain_id').create()
+                             name='ixu_policy_domain_id').create()
     migrate.UniqueConstraint(rule.c.service, rule.c.policy_id,
                              rule.c.action,
                              name='ixu_rule_policy_service_action').create()

@@ -46,11 +46,6 @@ class PolicyManager(manager.Manager):
     def __init__(self):
         super(Manager, self).__init__(CONF.policy.driver)
     
-    def domain_has_policy(self, domain_id):
-        policy_refs = self.list_policies_in_domain(domain_id)
-        if policy_refs: return True
-        else: return False
-    
     def create_policy(self, policy_id, policy, initiator=None):
         ref = self.driver.create_policy(policy_id, policy)
         notifications.Audit.created(self._POLICY, policy_id, initiator)
@@ -83,16 +78,9 @@ class PolicyManager(manager.Manager):
             raise exception.PolicyNotFound(policy_id=policy_id)
         notifications.Audit.deleted(self._POLICY, policy_id, initiator)
         return ret
-
-    def list_policies_in_domain(self, domain_id):
-        self.resource_api.get_domain(domain_id) # assert domain exists
-        return self.driver.list_policies_in_domain(domain_id)
     
     def enabled_policies_in_domain(self, domain_id):
-        try:
-            self.resource_api.get_domain(domain_id)
-        except exception.DomainNotFound:
-            raise
+        self.resource_api.get_domain(domain_id)
         return self.driver.enabled_policies_in_domain(domain_id)
 
 
@@ -103,11 +91,6 @@ class RuleManager(manager.Manager):
     
     def __init__(self):
         super(Manager, self).__init__(CONF.rule.driver)
-
-    def rule_created(self, domain_id, service, action):
-        rule_ref = self.get_rule_in_domain(domain_id, service, action)
-        if rule_ref: return True
-        else: return False
 
     def create_rule(self, rule_id, rule, initiator=None):
         ref = self.driver.create_rule(rule_id, rule)

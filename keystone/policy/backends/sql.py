@@ -59,42 +59,6 @@ class Policy(rules.Policy):
             policy_refs = sql.filter_limit_query(PolicyModel, query, hints)
             return [policy_ref.to_dict() for policy_ref in policy_refs]
 
-    def list_policies_from_ids(self, policy_ids):
-        if not policy_ids:
-            return []
-        else:
-            with sql.transaction() as session:
-                query = session.query(PolicyModel)
-                query = query.filter(PolicyModel.id.in_(policy_ids))
-                return [policy_ref.to_dict() for policy_ref in query.all()]
-
-    def list_policies_ids_from_domain_ids(self, domain_ids):
-        # (darren) The existence of all the domains in domain_ids needs to be
-        # validated before calling this method 
-        if not domain_ids:
-            return []
-        else:
-            with sql.transaction() as session:
-                query = session.query(PolicyModel.id)
-                query = (
-                    query.filter(PolicyModel.domain_id.in_(domain_ids)))
-                return [x.id for x in query.all()]
-
-    def list_policies_in_domain(self, domain_id):
-        with sql.transaction() as session:
-            # (Darren) Managers must make sure the domain_id passed in 
-            # does exist. And we shouldn't rely on other backends here. 
-            query = session.query(PolicyModel)
-            policy_refs = query.filter_by(domain_id=domain_id)
-            return [policy_ref.to_dict() for policy_ref in policy_refs]
-    
-    def enabled_policies_in_domain(self, domain_id):
-        with sql.transaction() as session:
-            query = session.query(PolicyModel)
-            policy_refs = query.filter_by(domain_id=domain_id,
-                                          enabled=True)
-            return [policy_ref.to_dict() for policy_ref in policy_refs]
-
     def _get_policy(self, session, policy_id):
         """Private method to get a policy model object (NOT a dictionary)."""
         ref = session.query(PolicyModel).get(policy_id)
@@ -174,7 +138,6 @@ class Rule(policy.RuleDriver):
     
     def delelte_rules(self, policy_id):
         with sql.transaction() as session:
-            query = session.query(RuleModel)
-            rule_refs = query.filter_by(policy_id=policy_id)
-            for rule_ref in rule_refs:
+            refs = session.query(RuleModel).filter_by(policy_id=policy_id)
+            for ref in refs:
                 session.delete(rule_ref)
