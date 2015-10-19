@@ -467,6 +467,20 @@ FILE_OPTIONS = {
                    help='Maximum number of entities that will be returned '
                         'in a role collection.'),
     ],
+    'rule':[
+        cfg.StrOpt('driver',
+                   default='keystone.policy.backends.sql.Rule',
+                   help='Rule management backend driver.'),
+        cfg.BoolOpt('caching', default=True,
+                    help='Toggle for rule caching. This has no effect '
+                         'unless global caching is enabled.'),
+        cfg.IntOpt('cache_time',
+                   help='TTL (in seconds) to cache rule data. This has '
+                        'no effect unless global caching is enabled.'),
+        cfg.IntOpt('list_limit',
+                   help='Maximum number of entities that will be returned '
+                        'in a rule collection.'),
+    ],
     'policy': [
         cfg.StrOpt('driver',
                    default='keystone.policy.backends.sql.Policy',
