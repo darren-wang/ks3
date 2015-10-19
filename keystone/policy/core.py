@@ -42,7 +42,7 @@ class PolicyManager(manager.Manager):
     _POLICY = 'policy'
 
     def __init__(self):
-        super(Manager, self).__init__(CONF.policy.driver)
+        super(PolicyManager, self).__init__(CONF.policy.driver)
     
     def create_policy(self, policy_id, policy, initiator=None):
         ref = self.driver.create_policy(policy_id, policy)
@@ -88,7 +88,7 @@ class RuleManager(manager.Manager):
     _RULE = 'rule'
     
     def __init__(self):
-        super(Manager, self).__init__(CONF.rule.driver)
+        super(RuleManager, self).__init__(CONF.rule.driver)
 
     def create_rule(self, rule_id, rule, initiator=None):
         ref = self.driver.create_rule(rule_id, rule)
