@@ -47,7 +47,7 @@ class Routers(wsgi.RoutersBase):
             })
 
         routers.append(
-            router.Router(controllers.RoleV3(), 'roles', 'role',
+            router.Router(controllers.Role(), 'roles', 'role',
                           resource_descriptions=self.v3_resources))
 
         grant_controller = controllers.GrantAssignment()
