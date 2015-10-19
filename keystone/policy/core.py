@@ -114,7 +114,11 @@ class RuleManager(manager.Manager):
             raise exception.RuleNotFound(rule_id=rule_id)
 
     def list_rules(self, hints=None):
-        return self.driver.list_rules(hints or driver_hints.Hints())
+        rules = self.driver.list_rules(hints or driver_hints.Hints())
+        if not rules:
+            rules = [{'type':'default_rule', 
+                      'content': 'role:admin'}]
+        return rules
     
     def delete_rule(self, rule_id, initiator):
         try:
