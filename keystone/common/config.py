@@ -489,22 +489,6 @@ FILE_OPTIONS = {
                    help='Maximum number of entities that will be returned '
                         'in a policy collection.'),
     ],
-    'endpoint_filter': [
-        cfg.StrOpt('driver',
-                   default='keystone.contrib.endpoint_filter.backends'
-                           '.sql.EndpointFilter',
-                   help='Endpoint Filter backend driver'),
-        cfg.BoolOpt('return_all_endpoints_if_no_filter', default=True,
-                    help='Toggle to return all active endpoints if no filter '
-                         'exists.'),
-    ],
-    'endpoint_policy': [
-        cfg.StrOpt('driver',
-                   default='keystone.contrib.endpoint_policy.backends'
-                           '.sql.EndpointPolicy',
-                   help='Endpoint policy backend driver'),
-    ],
-    
     'auth': [
         cfg.ListOpt('methods', default=_DEFAULT_AUTH_METHODS,
                     help='Default auth methods.'),
