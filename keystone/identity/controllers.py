@@ -98,3 +98,81 @@ class User(controller.Controller):
                 context, user_id, original_password, password)
         except AssertionError:
             raise exception.Unauthorized()
+
+    def _check_user_and_group_protection(self, context, prep_info,
+                                         user_id, group_id):
+        ref = {}
+        ref['user'] = self.identity_api.get_user(user_id)
+        ref['group'] = self.identity_api.get_group(group_id)
+        self.check_protection(context, prep_info, ref)
+
+    @controller.filterprotected('domain_id', 'enabled', 'name')
+    def list_users_in_group(self, context, filters, group_id):
+        hints = User.build_driver_hints(context, filters)
+        refs = self.identity_api.list_users_in_group(group_id, hints=hints)
+        return User.wrap_collection(context, refs, hints=hints)
+
+    @controller.protected(callback=_check_user_and_group_protection)
+    def add_user_to_group(self, context, user_id, group_id):
+        self.identity_api.add_user_to_group(user_id, group_id)
+
+    @controller.protected(callback=_check_user_and_group_protection)
+    def check_user_in_group(self, context, user_id, group_id):
+        return self.identity_api.check_user_in_group(user_id, group_id)
+
+    @controller.protected(callback=_check_user_and_group_protection)
+    def remove_user_from_group(self, context, user_id, group_id):
+        self.identity_api.remove_user_from_group(user_id, group_id)
+
+@dependency.requires('identity_api')
+class Group(controller.Controller):
+    collection_name = 'groups'
+    member_name = 'group'
+
+    def __init__(self):
+        super(Group, self).__init__()
+        self.get_member_from_driver = self.identity_api.get_group
+
+    @controller.protected()
+    def create_group(self, context, group):
+        self._require_attribute(group, 'name')
+
+        # The manager layer will generate the unique ID for groups
+        ref = self._normalize_dict(group)
+        ref = self._normalize_domain_id(context, ref)
+        initiator = notifications._get_request_audit_info(context)
+        ref = self.identity_api.create_group(ref, initiator)
+        return Group.wrap_member(context, ref)
+
+    @controller.filterprotected('domain_id', 'name')
+    def list_groups(self, context, filters):
+        hints = Group.build_driver_hints(context, filters)
+        refs = self.identity_api.list_groups(
+            domain_scope=self._get_domain_id_for_list_request(context),
+            hints=hints)
+        return Group.wrap_collection(context, refs, hints=hints)
+
+    @controller.filterprotected('name')
+    def list_groups_for_user(self, context, filters, user_id):
+        hints = Group.build_driver_hints(context, filters)
+        refs = self.identity_api.list_groups_for_user(user_id, hints=hints)
+        return Group.wrap_collection(context, refs, hints=hints)
+
+    @controller.protected()
+    def get_group(self, context, group_id):
+        ref = self.identity_api.get_group(group_id)
+        return Group.wrap_member(context, ref)
+
+    @controller.protected()
+    def update_group(self, context, group_id, group):
+        self._require_matching_id(group_id, group)
+        self._require_matching_domain_id(
+            group_id, group, self.identity_api.get_group)
+        initiator = notifications._get_request_audit_info(context)
+        ref = self.identity_api.update_group(group_id, group, initiator)
+        return Group.wrap_member(context, ref)
+
+    @controller.protected()
+    def delete_group(self, context, group_id):
+        initiator = notifications._get_request_audit_info(context)
+        self.identity_api.delete_group(group_id, initiator)

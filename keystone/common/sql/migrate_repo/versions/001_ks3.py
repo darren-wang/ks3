@@ -81,6 +81,16 @@ def upgrade(migrate_engine):
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
+    group = sql.Table(
+        'group', meta,
+        sql.Column('id', sql.String(length=64), primary_key=True),
+        sql.Column('domain_id', sql.String(length=64), nullable=False),
+        sql.Column('name', sql.String(length=64), nullable=False),
+        sql.Column('description', sql.Text),
+        sql.Column('extra', ks_sql.JsonBlob.impl),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8')
+
     policy = sql.Table(
         'policy', meta,
         sql.Column('id', sql.String(length=64), primary_key=True),
@@ -164,10 +174,16 @@ def upgrade(migrate_engine):
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 
+    user_group_membership = sql.Table(
+        'user_group_membership', meta,
+        sql.Column('user_id', sql.String(length=64), primary_key=True),
+        sql.Column('group_id', sql.String(length=64), primary_key=True),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8')
+
     # create all tables
-    tables = [region, service, endpoint, rule,
-              domain, project, role, assignment,
-              user, policy, token ]
+    tables = [assignment, domain, endpoint, group, policy, project, role,
+              region, rule, service, token, user, user_group_membership]
 
     for table in tables:
         try:
@@ -180,6 +196,9 @@ def upgrade(migrate_engine):
     migrate.UniqueConstraint(user.c.domain_id,
                              user.c.name,
                              name='ixu_user_name_domain_id').create()
+    migrate.UniqueConstraint(group.c.domain_id,
+                             group.c.name,
+                             name='ixu_group_name_domain_id').create()
     migrate.UniqueConstraint(role.c.name,
                              role.c.domain_id,
                              name='ixu_role_name_domain_id').create()
@@ -200,15 +219,28 @@ def upgrade(migrate_engine):
               token.c.valid).create()
     
     sql.Index('ix_actor_id', assignment.c.actor_id).create()
-    
+
     sql.Index('ix_token_user_id', token.c.user_id).create()
     sql.Index('ix_token_trust_id', token.c.trust_id).create()
-
+    sql.Index('service_id', endpoint.c.service_id).create()
+    sql.Index('group_id', user_group_membership.c.group_id).create()
     # Foreign keys
     fkeys = [
         {'columns': [user.c.domain_id],
          'references': [domain.c.id],
          'name': 'fk_user_domain_id'},
+
+        {'columns': [group.c.domain_id],
+         'references': [domain.c.id],
+         'name': 'fk_group_domain_id'},
+
+        {'columns': [user_group_membership.c.group_id],
+         'references': [group.c.id],
+         'name': 'fk_user_group_membership_group_id'},
+
+        {'columns': [user_group_membership.c.user_id],
+         'references':[user.c.id],
+         'name': 'fk_user_group_membership_user_id'},
 
         {'columns': [project.c.domain_id],
          'references': [domain.c.id],
