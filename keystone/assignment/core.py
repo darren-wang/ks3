@@ -102,9 +102,9 @@ class Manager(manager.Manager):
         return [x['id'] for
                 x in self.identity_api.list_groups_for_user(user_id)]
 
-    def list_user_ids_for_project(self, tenant_id):
-        self.resource_api.get_project(tenant_id)
-        return self.driver.list_user_ids_for_project(tenant_id)
+    def list_user_ids_for_project(self, project_id):
+        self.resource_api.get_project(project_id)
+        return self.driver.list_user_ids_for_project(project_id)
 
     def _list_parent_ids_of_project(self, project_id):
         if CONF.os_inherit.enabled:
@@ -113,7 +113,7 @@ class Manager(manager.Manager):
         else:
             return []
 
-    def get_roles_for_user_and_project(self, user_id, tenant_id):
+    def get_roles_for_user_and_project(self, user_id, project_id):
         """Get the roles associated with a user within given project.
 
         This includes roles directly assigned to the user on the
@@ -138,7 +138,7 @@ class Manager(manager.Manager):
             role_list = []
             try:
                 metadata_ref = self._get_metadata(user_id=user_id,
-                                                  tenant_id=project_ref['id'])
+                                                  project_id=project_ref['id'])
                 role_list = self._roles_from_role_dicts(
                     metadata_ref.get('roles', {}), False)
             except exception.MetadataNotFound:
@@ -162,7 +162,7 @@ class Manager(manager.Manager):
 
             return role_list
 
-        project_ref = self.resource_api.get_project(tenant_id)
+        project_ref = self.resource_api.get_project(project_id)
         user_role_list = _get_user_project_roles(user_id, project_ref)
         group_role_list = _get_group_project_roles(user_id, project_ref)
         # Use set() to process the list to remove any duplicates
@@ -228,19 +228,19 @@ class Manager(manager.Manager):
 
         return self.role_api.list_roles_from_ids(role_ids)
 
-    def add_user_to_project(self, tenant_id, user_id):
-        """Add user to a tenant by creating a default role relationship.
+    def add_user_to_project(self, project_id, user_id):
+        """Add user to a project by creating a default role relationship.
 
         :raises: keystone.exception.ProjectNotFound,
                  keystone.exception.UserNotFound
 
         """
-        self.resource_api.get_project(tenant_id)
+        self.resource_api.get_project(project_id)
         try:
             self.role_api.get_role(CONF.member_role_id)
             self.driver.add_role_to_user_and_project(
                 user_id,
-                tenant_id,
+                project_id,
                 CONF.member_role_id)
         except exception.RoleNotFound:
             LOG.info(_LI("Creating the default role %s "
@@ -257,7 +257,7 @@ class Manager(manager.Manager):
             # now that default role exists, the add should succeed
             self.driver.add_role_to_user_and_project(
                 user_id,
-                tenant_id,
+                project_id,
                 CONF.member_role_id)
 
     @notifications.role_assignment('created')
@@ -275,27 +275,27 @@ class Manager(manager.Manager):
         self.role_api.get_role(role_id)
         self.driver.add_role_to_user_and_project(user_id, project_id, role_id)
 
-    def add_role_to_user_and_project(self, user_id, tenant_id, role_id):
+    def add_role_to_user_and_project(self, user_id, project_id, role_id):
         self._add_role_to_user_and_project_adapter(
-            role_id, user_id=user_id, project_id=tenant_id)
+            role_id, user_id=user_id, project_id=project_id)
 
-    def remove_user_from_project(self, tenant_id, user_id):
-        """Remove user from a tenant
+    def remove_user_from_project(self, project_id, user_id):
+        """Remove user from a project
 
         :raises: keystone.exception.ProjectNotFound,
                  keystone.exception.UserNotFound
 
         """
-        roles = self.get_roles_for_user_and_project(user_id, tenant_id)
+        roles = self.get_roles_for_user_and_project(user_id, project_id)
         if not roles:
-            raise exception.NotFound(tenant_id)
+            raise exception.NotFound(project_id)
         for role_id in roles:
             try:
                 self.driver.remove_role_from_user_and_project(user_id,
-                                                              tenant_id,
+                                                              project_id,
                                                               role_id)
                 self.revoke_api.revoke_by_grant(role_id, user_id=user_id,
-                                                project_id=tenant_id)
+                                                project_id=project_id)
 
             except exception.RoleNotFound:
                 LOG.debug("Removing role %s failed because it does not exist.",
@@ -414,9 +414,9 @@ class Manager(manager.Manager):
         self.revoke_api.revoke_by_grant(role_id, user_id=user_id,
                                         project_id=project_id)
 
-    def remove_role_from_user_and_project(self, user_id, tenant_id, role_id):
+    def remove_role_from_user_and_project(self, user_id, project_id, role_id):
         self._remove_role_from_user_and_project_adapter(
-            role_id, user_id=user_id, project_id=tenant_id)
+            role_id, user_id=user_id, project_id=project_id)
 
     @notifications.internal(notifications.INVALIDATE_USER_TOKEN_PERSISTENCE)
     def _emit_invalidate_user_token_persistence(self, user_id):
@@ -611,7 +611,7 @@ class Driver(object):
         return CONF.assignment.list_limit or CONF.list_limit
 
     @abc.abstractmethod
-    def list_user_ids_for_project(self, tenant_id):
+    def list_user_ids_for_project(self, project_id):
         """Lists all user IDs with a role assignment in the specified project.
 
         :returns: a list of user_ids or an empty set.
@@ -620,8 +620,8 @@ class Driver(object):
         raise exception.NotImplemented()  # pragma: no cover
 
     @abc.abstractmethod
-    def add_role_to_user_and_project(self, user_id, tenant_id, role_id):
-        """Add a role to a user within given tenant.
+    def add_role_to_user_and_project(self, user_id, project_id, role_id):
+        """Add a role to a user within given project.
 
         :raises: keystone.exception.Conflict
 
@@ -630,8 +630,8 @@ class Driver(object):
         raise exception.NotImplemented()  # pragma: no cover
 
     @abc.abstractmethod
-    def remove_role_from_user_and_project(self, user_id, tenant_id, role_id):
-        """Remove a role from a user within given tenant.
+    def remove_role_from_user_and_project(self, user_id, project_id, role_id):
+        """Remove a role from a user within given project.
 
         :raises: keystone.exception.RoleNotFound
 
