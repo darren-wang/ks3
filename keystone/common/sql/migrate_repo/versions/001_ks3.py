@@ -135,7 +135,7 @@ def upgrade(migrate_engine):
         sql.Column('id', sql.String(length=64), primary_key=True),
         sql.Column('policy_id', sql.String(length=64), nullable=False),
         sql.Column('service', sql.String(length=64), nullable=False),
-        sql.Column('action', sql.String(length=64), nullable=False),
+        sql.Column('operation', sql.String(length=64), nullable=False),
         sql.Column('content', ks_sql.JsonBlob.impl, nullable=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
@@ -208,8 +208,8 @@ def upgrade(migrate_engine):
     migrate.UniqueConstraint(policy.c.domain_id,
                              name='ixu_policy_domain_id').create()
     migrate.UniqueConstraint(rule.c.service, rule.c.policy_id,
-                             rule.c.action,
-                             name='ixu_rule_policy_service_action').create()
+                             rule.c.operation,
+                             name='ixu_rule_policy_service_operation').create()
     migrate.UniqueConstraint(domain.c.name,
                              name='ixu_domain_name').create()
 

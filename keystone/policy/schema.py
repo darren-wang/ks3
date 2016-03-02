@@ -43,7 +43,7 @@ _rule_properties = {
     'service': {
         'type': 'string'
     },
-    'action': {
+    'operation': {
         'type': 'string'
     },
     'content': {
@@ -54,7 +54,7 @@ _rule_properties = {
 rule_create = {
     'type': 'object',
     'properties': _rule_properties,
-    'required': ['domain_id', 'service', 'action', 'content'],
+    'required': ['domain_id', 'service', 'operation', 'content'],
     'additionalProperties': False
 }
 

@@ -32,14 +32,14 @@ class PolicyModel(sql.ModelBase, sql.DictBase):
 
 class RuleModel(sql.ModelBase, sql.DictBase):
     __tablename__ = 'rule'
-    attributes = ['id', 'policy_id', 'service', 'action', 'content']
+    attributes = ['id', 'policy_id', 'service', 'operation', 'content']
     id = sql.Column(sql.String(64), primary_key=True)
     policy_id = sql.Column(sql.String(64), sql.ForeignKey('policy.id'),
                             nullable=False)
     service = sql.Column(sql.String(64), nullable=False)
-    action = sql.Column(sql.String(64), nullable=False)
+    operation = sql.Column(sql.String(64), nullable=False)
     content = sql.Column(sql.JsonBlob(), nullable=True)
-    __table_args__ = (sql.UniqueConstraint('policy_id', 'service', 'action'),
+    __table_args__ = (sql.UniqueConstraint('policy_id', 'service', 'operation'),
                       {})
 
 
