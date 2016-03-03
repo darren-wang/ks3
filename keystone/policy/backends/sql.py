@@ -26,8 +26,7 @@ class PolicyModel(sql.ModelBase, sql.DictBase):
                            nullable=False)
     enabled = sql.Column(sql.Boolean, default=False, nullable=False)
     description = sql.Column(sql.Text(), nullable=True)
-    __table_args__ = (sql.UniqueConstraint('domain_id', 'name'),
-                      sql.UniqueConstraint('domain_id', 'enabled'), {})
+    __table_args__ = (sql.UniqueConstraint('domain_id', 'name'), {})
 
 
 class RuleModel(sql.ModelBase, sql.DictBase):
@@ -140,4 +139,4 @@ class Rule(policy.RuleDriver):
         with sql.transaction() as session:
             refs = session.query(RuleModel).filter_by(policy_id=policy_id)
             for ref in refs:
-                session.delete(rule_ref)
+                session.delete(ref)

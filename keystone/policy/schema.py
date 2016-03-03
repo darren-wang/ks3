@@ -27,7 +27,7 @@ _policy_properties = {
 policy_create = {
     'type': 'object',
     'properties': _policy_properties,
-    'required': ['domain_id', 'rule_set'],
+    'required': ['domain_id', 'name', 'rule_set'],
     'additionalProperties': True
 }
 
@@ -39,14 +39,14 @@ policy_update = {
 }
 
 _rule_properties = {
-    'domain_id': parameter_types.id_string,
+    'policy_id': parameter_types.id_string,
     'service': {
         'type': 'string'
     },
     'operation': {
         'type': 'string'
     },
-    'content': {
+    'condition': {
         'type': 'string'
     },
 }
@@ -54,7 +54,7 @@ _rule_properties = {
 rule_create = {
     'type': 'object',
     'properties': _rule_properties,
-    'required': ['domain_id', 'service', 'operation', 'content'],
+    'required': ['policy_id', 'service', 'operation', 'condition'],
     'additionalProperties': False
 }
 
