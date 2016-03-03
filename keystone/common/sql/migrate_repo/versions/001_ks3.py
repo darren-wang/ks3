@@ -225,6 +225,8 @@ def upgrade(migrate_engine):
     sql.Index('ix_token_trust_id', token.c.trust_id).create()
     sql.Index('service_id', endpoint.c.service_id).create()
     sql.Index('group_id', user_group_membership.c.group_id).create()
+    sql.Index('policy_id', rule.c.policy_id).create()
+
     # Foreign keys
     fkeys = [
         {'columns': [user.c.domain_id],
