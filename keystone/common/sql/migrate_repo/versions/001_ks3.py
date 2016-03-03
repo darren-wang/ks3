@@ -136,7 +136,7 @@ def upgrade(migrate_engine):
         sql.Column('policy_id', sql.String(length=64), nullable=False),
         sql.Column('service', sql.String(length=64), nullable=False),
         sql.Column('operation', sql.String(length=64), nullable=False),
-        sql.Column('content', ks_sql.JsonBlob.impl, nullable=True),
+        sql.Column('condition', ks_sql.JsonBlob.impl, nullable=True),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
 

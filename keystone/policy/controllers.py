@@ -52,7 +52,7 @@ class Policy(controller.Controller):
             d = {'policy_id':policy_id, 'service': p['service']}
             for rule in p['rules'].iteritems():
                 d['operation'] = rule[0]
-                d['content'] = rule[1]
+                d['condition'] = rule[1]
                 rule_ref = self._assign_unique_id(self._normalize_dict(d))
                 self.rule_api.create_rule(rule_ref['id'], rule_ref,
                                           initiator)
@@ -93,7 +93,7 @@ class Policy(controller.Controller):
             d = {'policy_id':policy_id, 'service': p['service']}
             for rule in p['rules'].iteritems():
                 d['operation'] = rule[0]
-                d['content'] = rule[1]
+                d['condition'] = rule[1]
                 self.rule_api.update_rule(d, initiator)
         return Policy.wrap_member(context, ref)
 

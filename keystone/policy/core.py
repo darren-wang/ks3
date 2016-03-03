@@ -115,7 +115,7 @@ class RuleManager(manager.Manager):
         rules = self.driver.list_rules(hints or driver_hints.Hints())
         if not rules:
             rules = [{'type':'default_rule', 
-                      'content': 'role:admin'}]
+                      'condition': 'role:admin'}]
         return rules
     
     def delete_rule(self, rule_id, initiator):
@@ -201,7 +201,7 @@ class RuleDriver(object):
 
     @abc.abstractmethod
     def get_rule(self, rule_id):
-        """Retrieve a specific rule's content.
+        """Retrieve a specific rule's condition.
 
         :raises: keystone.exception.RuleNotFound
 
@@ -210,7 +210,7 @@ class RuleDriver(object):
 
     @abc.abstractmethod
     def list_rules(self):
-        """Retrieve a specific rule's content.
+        """Retrieve a specific rule's condition.
 
         :raises: keystone.exception.RuleNotFound
 
