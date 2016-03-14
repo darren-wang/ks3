@@ -254,7 +254,6 @@ class Project(sql.ModelBase, sql.DictBase):
                            nullable=False)
     description = sql.Column(sql.Text())
     enabled = sql.Column(sql.Boolean)
-    extra = sql.Column(sql.JsonBlob())
     parent_id = sql.Column(sql.String(64), sql.ForeignKey('project.id'))
     # Unique constraint across two columns to create the separation
     # rather than just only 'name' being unique
