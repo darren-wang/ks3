@@ -32,14 +32,6 @@ FILE_OPTIONS = {
                         'AdminTokenAuthMiddleware from your paste '
                         'application pipelines (for example, in '
                         'keystone-paste.ini).'),
-        cfg.IntOpt('compute_port', default=8774,
-                   help='(Deprecated) The port which the OpenStack Compute '
-                        'service listens on. This option was only used for '
-                        'string replacement in the templated catalog backend. '
-                        'Templated catalogs should replace the '
-                        '"$(compute_port)s" substitution with the static port '
-                        'of the compute service. As of Juno, this option is '
-                        'deprecated and will be removed in the L release.'),
         cfg.StrOpt('public_endpoint',
                    help='The base public endpoint URL for Keystone that is '
                         'advertised to clients (NOTE: this does NOT affect '
@@ -157,71 +149,6 @@ FILE_OPTIONS = {
         cfg.IntOpt('list_limit',
                    help='Maximum number of entities that will be returned in '
                         'an identity collection.'),
-    ],
-    'identity_mapping': [
-        cfg.StrOpt('driver',
-                   default=('keystone.identity.mapping_backends'
-                            '.sql.Mapping'),
-                   help='Keystone Identity Mapping backend driver.'),
-        cfg.StrOpt('generator',
-                   default=('keystone.identity.id_generators'
-                            '.sha256.Generator'),
-                   help='Public ID generator for user and group entities. '
-                        'The Keystone identity mapper only supports '
-                        'generators that produce no more than 64 characters.'),
-        cfg.BoolOpt('backward_compatible_ids',
-                    default=True,
-                    help='The format of user and group IDs changed '
-                         'in Juno for backends that do not generate UUIDs '
-                         '(e.g. LDAP), with keystone providing a hash mapping '
-                         'to the underlying attribute in LDAP. By default '
-                         'this mapping is disabled, which ensures that '
-                         'existing IDs will not change. Even when the '
-                         'mapping is enabled by using domain specific '
-                         'drivers, any users and groups from the default '
-                         'domain being handled by LDAP will still not be '
-                         'mapped to ensure their IDs remain backward '
-                         'compatible. Setting this value to False will '
-                         'enable the mapping for even the default LDAP '
-                         'driver. It is only safe to do this if you do not '
-                         'already have assignments for users and '
-                         'groups from the default LDAP domain, and it is '
-                         'acceptable for Keystone to provide the different '
-                         'IDs to clients than it did previously.  Typically '
-                         'this means that the only time you can set this '
-                         'value to False is when configuring a fresh '
-                         'installation.'),
-    ],
-    'trust': [
-        cfg.BoolOpt('enabled', default=True,
-                    help='Delegation and impersonation features can be '
-                         'optionally disabled.'),
-        cfg.BoolOpt('allow_redelegation', default=False,
-                    help='Enable redelegation feature.'),
-        cfg.IntOpt('max_redelegation_count', default=3,
-                   help='Maximum depth of trust redelegation.'),
-        cfg.StrOpt('driver',
-                   default='keystone.trust.backends.sql.Trust',
-                   help='Trust backend driver.')],
-    'os_inherit': [
-        cfg.BoolOpt('enabled', default=False,
-                    help='role-assignment inheritance to projects from '
-                         'owning domain or from projects higher in the '
-                         'hierarchy can be optionally enabled.'),
-    ],
-    'fernet_tokens': [
-        cfg.StrOpt('key_repository',
-                   default='/etc/keystone/fernet-keys/',
-                   help='Directory containing Fernet token keys.'),
-        cfg.IntOpt('max_active_keys',
-                   default=3,
-                   help='This controls how many keys are held in rotation by '
-                        'keystone-manage fernet_rotate before they are '
-                        'discarded. The default value of 3 means that '
-                        'keystone will maintain one staged key, one primary '
-                        'key, and one secondary key. Increasing this value '
-                        'means that additional secondary keys will be kept in '
-                        'the rotation.'),
     ],
     'token': [
         cfg.ListOpt('bind', default=[],
@@ -438,19 +365,6 @@ FILE_OPTIONS = {
                    help='Maximum number of entities that will be returned '
                         'in a resource collection.'),
     ],
-    'domain_config': [
-        cfg.StrOpt('driver',
-                   default='keystone.resource.config_backends.sql.'
-                           'DomainConfig',
-                   help='Domain config backend driver.'),
-        cfg.BoolOpt('caching', default=True,
-                    help='Toggle for domain config caching. This has no '
-                         'effect unless global caching is enabled.'),
-        cfg.IntOpt('cache_time', default=300,
-                   help='TTL (in seconds) to cache domain config data. This '
-                        'has no effect unless domain config caching is '
-                        'enabled.'),
-    ],
     'role': [
         # The role driver has no default for backward compatibility reasons.
         # If role driver is not specified, the assignment driver chooses
@@ -589,13 +503,6 @@ FILE_OPTIONS = {
                    help='The number of worker processes to serve the public '
                         'eventlet application. Defaults to number of CPUs '
                         '(minimum of 2).'),
-        cfg.IntOpt('admin_workers',
-                   deprecated_name='admin_workers',
-                   deprecated_group='DEFAULT',
-                   deprecated_for_removal=True,
-                   help='The number of worker processes to serve the admin '
-                        'eventlet application. Defaults to number of CPUs '
-                        '(minimum of 2).'),
         cfg.StrOpt('public_bind_host',
                    default='0.0.0.0',
                    deprecated_opts=[cfg.DeprecatedOpt('bind_host',
@@ -609,20 +516,6 @@ FILE_OPTIONS = {
                    deprecated_group='DEFAULT',
                    deprecated_for_removal=True,
                    help='The port number which the public service listens '
-                        'on.'),
-        cfg.StrOpt('admin_bind_host',
-                   default='0.0.0.0',
-                   deprecated_opts=[cfg.DeprecatedOpt('bind_host',
-                                                      group='DEFAULT'),
-                                    cfg.DeprecatedOpt('admin_bind_host',
-                                                      group='DEFAULT')],
-                   deprecated_for_removal=True,
-                   help='The IP address of the network interface for the '
-                        'admin service to listen on.'),
-        cfg.IntOpt('admin_port', default=35357, deprecated_name='admin_port',
-                   deprecated_group='DEFAULT',
-                   deprecated_for_removal=True,
-                   help='The port number which the admin service listens '
                         'on.'),
         cfg.BoolOpt('wsgi_keep_alive', default=True,
                     help="If set to false, disables keepalives on the server; "
