@@ -37,18 +37,6 @@ CONF = cfg.CONF
 DEFAULT_EXTENSIONS = ['revoke']
 
 
-def get_default_domain():
-    # Return the reference used for the default domain structure during
-    # sql migrations.
-    return {
-        'id': CONF.identity.admin_domain_id,
-        'name': 'Default',
-        'enabled': True,
-        'extra': jsonutils.dumps({'description': 'Owns users and tenants '
-                                                 '(i.e. projects) available '
-                                                 'on Identity API v2.'})}
-
-
 #  Different RDBMSs use different schemes for naming the Foreign Key
 #  Constraints.  SQLAlchemy does not yet attempt to determine the name
 #  for the constraint, and instead attempts to deduce it from the column.

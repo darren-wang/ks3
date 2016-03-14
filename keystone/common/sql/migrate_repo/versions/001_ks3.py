@@ -271,11 +271,6 @@ def upgrade(migrate_engine):
                                      refcolumns=fkey['references'],
                                      name=fkey.get('name')).create()
 
-    # Create the default domain.
-    session = orm.sessionmaker(bind=migrate_engine)()
-    domain.insert(migration_helpers.get_default_domain()).execute()
-    session.commit()
-
 
 def downgrade(migrate_engine):
     raise NotImplementedError('Downgrade to pre-Icehouse release db schema is '

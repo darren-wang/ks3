@@ -96,17 +96,6 @@ FILE_OPTIONS = {
                         '"HTTP_X_FORWARDED_PROTO".'),
     ],
     'identity': [
-        cfg.StrOpt('admin_domain_id', default='default',
-                   help='This references the domain to use for all '
-                        'Identity API v2 requests (which are not aware of '
-                        'domains). A domain with this ID will be created '
-                        'for you by keystone-manage db_sync in migration '
-                        '008. The domain referenced by this ID cannot be '
-                        'deleted on the v3 API, to prevent accidentally '
-                        'breaking the v2 API. There is nothing special about '
-                        'this domain, other than the fact that it must '
-                        'exist to order to maintain support for your v2 '
-                        'clients.'),
         cfg.BoolOpt('domain_specific_drivers_enabled',
                     default=False,
                     help='A subset (or all) of domains can have their own '
