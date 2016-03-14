@@ -150,6 +150,12 @@ FILE_OPTIONS = {
                    help='Maximum number of entities that will be returned in '
                         'an identity collection.'),
     ],
+    'os_inherit': [
+        cfg.BoolOpt('enabled', default=False,
+                    help='role-assignment inheritance to projects from '
+                         'owning domain or from projects higher in the '
+                         'hierarchy can be optionally enabled.'),
+    ],
     'token': [
         cfg.ListOpt('bind', default=[],
                     help='External auth mechanisms that should add bind '
