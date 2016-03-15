@@ -135,12 +135,12 @@ def protected(callback=None):
                 # update operations.
                 LOG.debug('\n#### KWARGS HERE ####\n')
                 LOG.debug(kwargs)
-		subParams = {}
+                subParams = {}
                 for k in kwargs.iterkeys():
-                    if isinstance(kwargs[k], str):
-                        subParams['url.'+k] = kwargs[k]
-                    else:
+                    if isinstance(kwargs[k], dict):
                         subParams['reqBody.'+k] = kwargs[k]
+                    else:
+                        subParams['url.'+k] = kwargs[k]
                 target.update(subParams)
                 target = utils.flatten_dict(target)
                 
