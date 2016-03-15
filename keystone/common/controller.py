@@ -133,7 +133,9 @@ def protected(callback=None):
 
                 # Add in the kwargs, which means reqBody in create and 
                 # update operations.
-                subParams = {}
+                LOG.debug('\n#### KWARGS HERE ####\n')
+                LOG.debug(kwargs)
+		subParams = {}
                 for k in kwargs.iterkeys():
                     if len(k.split('.')) == 1:
                         subParams['url.'+k] = kwargs[k]
