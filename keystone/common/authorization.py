@@ -59,7 +59,7 @@ def token_to_auth_context(token):
         auth_context['scope.project_id'] = token.project_id
         auth_context['scope.domain_id'] = token.project_domain_id
     elif token.domain_scoped:
-        auth_context['scope'] = 'domain'
+        auth_context['sub.scope'] = 'domain'
         auth_context['scope.domain_id'] = token.domain_id
     else:
         LOG.debug('RBAC: Proceeding without project or domain scope')
