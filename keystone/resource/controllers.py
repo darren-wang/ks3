@@ -47,10 +47,11 @@ class Domain(controller.Controller):
 
     def _create_init_user(self, user_name, domain_id, initiator):
         init_pass = base64.urlsafe_b64encode(uuid.uuid4().hex[:18])
+        domain_name = self.resource_api.get_domain(domain_id)['name']
         init_user = {
          'domain_id': domain_id,
          'password': init_pass,
-         'description': 'Initial user of domain: %s.' %domain_id,
+         'description': 'Initial user of domain: %s.' %domain_name,
          'enabled':True
         }
         if user_name:
@@ -63,11 +64,12 @@ class Domain(controller.Controller):
     
     def _create_init_role(self, domain_id, initiator):
         init_role_id = uuid.uuid4().hex
+        domain_name = self.resource_api.get_domain(domain_id)['name']
         init_role = {
          'name':'domain_admin',
          'id': init_role_id,
          'domain_id':domain_id,
-         'description': 'Initial role of domain: %s' %domain_id
+         'description': 'Initial role of domain: %s' %domain_name
          }
         ref = self.role_api.create_role(init_role_id, init_role,
                                         initiator)
