@@ -54,6 +54,11 @@ _domain_properties = {
         'type': 'string',
         'minLength': 1,
         'maxLength': 64
+    },
+    'domain_root_user': {
+        'type': 'string',
+        'minLength': 1,
+        'maxLength': 64
     }
 }
 

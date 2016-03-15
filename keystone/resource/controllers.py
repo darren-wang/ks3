@@ -45,15 +45,18 @@ class Domain(controller.Controller):
         super(Domain, self).__init__()
         self.get_member_from_driver = self.resource_api.get_domain
 
-    def _create_init_user(self, domain_id, initiator):
+    def _create_init_user(self, user_name, domain_id, initiator):
         init_pass = base64.urlsafe_b64encode(uuid.uuid4().hex[:18])
         init_user = {
-         'name': 'domain_admin',
          'domain_id': domain_id,
          'password': init_pass,
          'description': 'Initial user of domain: %s.' %domain_id,
          'enabled':True
-         }
+        }
+        if user_name:
+            init_user.update({'name': user_name})
+        else:
+            init_user.update({'name': 'domain_root'})
         ref = self.identity_api.create_user(init_user, initiator)
         ref.update({'password':init_pass})
         return {'user':ref}
@@ -61,7 +64,7 @@ class Domain(controller.Controller):
     def _create_init_role(self, domain_id, initiator):
         init_role_id = uuid.uuid4().hex
         init_role = {
-         'name':'admin',
+         'name':'domain_admin',
          'id': init_role_id,
          'domain_id':domain_id,
          'description': 'Initial role of domain: %s' %domain_id
@@ -75,9 +78,13 @@ class Domain(controller.Controller):
     def create_domain(self, context, domain):
         ref = self._assign_unique_id(self._normalize_dict(domain))
         initiator = notifications._get_request_audit_info(context)
+        if ref['domain_root_user']:
+            init_user = ref.pop('domain_root_user')
+        else:
+            init_user = ''
         ref = self.resource_api.create_domain(ref['id'], ref, initiator)
         domain_ref = Domain.wrap_member(context, ref)
-        user_ref = self._create_init_user(ref['id'], initiator)
+        user_ref = self._create_init_user(init_user, ref['id'], initiator)
         role_ref = self._create_init_role(ref['id'], initiator)
         self.assignment_api.create_grant(role_ref['role']['id'],
                                     user_id=user_ref['user']['id'],
