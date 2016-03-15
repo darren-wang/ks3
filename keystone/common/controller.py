@@ -94,8 +94,6 @@ def protected(callback=None):
                 action = 'identity:%s' % f.__name__
                 creds = _build_policy_check_credentials(self, action,
                                                         context, kwargs)
-                # get user's domain_id despite how she's scoped.
-                user_domain_id = creds['scope_domain_id']
                 
                 target = {}
 
@@ -133,27 +131,27 @@ def protected(callback=None):
                         target['target'][self.member_name]['user'][
                             'domain']['id'] = (user_domain_id)
 
-                # Add in the kwargs, which means that any entity provided as a
-                # parameter for calls like create and update will be included.
-                target.update(kwargs)
+                # Add in the kwargs, which means reqBody in create and 
+                # update operations.
+                reqBody = {}
+                for k in kwargs.iterkeys():
+                    reqBody['reqBody.'+k] = kwargs[k]
+                target.update(reqBody)
                 target = utils.flatten_dict(target)
                 
                 # Isolation check
-                LOG.debug('Isolation check.')
-                self.policy_api.enforce(action, target, creds,
-                                        check_type='isolation')
+#                LOG.debug('Isolation check.')
+#                self.policy_api.enforce(action, target, creds,
+#                                        check_type='isolation')
 
-                if user_domain_id == CONF.oslo_policy.admin_domain_id:
-                    # admin domain's RBAC policy is loaded from policy file
-                    LOG.debug('Target domain is the admin domain.')
-                    self.policy_api.enforce(action, target, creds,
-                                            check_type='admin_domain')
-                else:
-                    # tenant domain's RBAC policy is loaded from DB
-                    LOG.debug('Target domain is a tenant domain.')
-                    self.policy_api.enforce(action, target, creds,
-                                            check_type=user_domain_id)
-
+                # tenant domain's RBAC policy is loaded from DB
+#                LOG.debug('Target domain is a tenant domain.')
+#                self.policy_api.enforce(action, target, creds,
+#                                        check_type=user_domain_id)
+            LOG.debug('\n#### CREDS HERE ####\n')
+            LOG.debug(creds)
+            LOG.debug('\n#### TARGET HERE ####\n')
+            LOG.debug(target)
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
@@ -171,7 +169,6 @@ def filterprotected(*filters):
                 creds = _build_policy_check_credentials(self,
                                                         action,
                                                         context, kwargs)
-                user_domain_id = creds['scope_domain_id']
                 
                 # Now, build the target dict for policy check.  We include:
                 #
@@ -185,7 +182,7 @@ def filterprotected(*filters):
                 if filters:
                     for item in filters:
                         if item in context['query_string']:
-                            target[item] = context['query_string'][item]
+                            target['qStr.'+item] = context['query_string'][item]
 
                     LOG.debug('RBAC: Adding query filter params (%s)', (
                         ', '.join(['%s=%s' % (item, target[item])
@@ -193,23 +190,21 @@ def filterprotected(*filters):
 
                 # Now any formal url parameters
                 for key in kwargs:
-                    target[key] = kwargs[key]
+                    target['url.'+key] = kwargs[key]
                 target = utils.flatten_dict(target)
 
                 # Isolation check
-                LOG.debug('Isolation check.')
-                self.policy_api.enforce(action, target, creds,
-                                        check_type='isolation')
+#                LOG.debug('Isolation check.')
+#                self.policy_api.enforce(action, target, creds,
+#                                        check_type='isolation')
 
-                if user_domain_id == CONF.oslo_policy.admin_domain_id:
-                    LOG.debug('Target domain is the admin domain.')
-                    self.policy_api.enforce(action, target, creds,
-                                            check_type='admin_domain')
-                else:
-                    LOG.debug('Target domain is a tenant domain.')
-                    self.policy_api.enforce(action, target, creds,
-                                            check_type=user_domain_id)
-
+#                LOG.debug('Target domain is a tenant domain.')
+#                self.policy_api.enforce(action, target, creds,
+#                                        check_type=user_domain_id)
+            LOG.debug('\n#### CREDS HERE ####\n')
+            LOG.debug(creds)
+            LOG.debug('\n#### TARGET HERE ####\n')
+            LOG.debug(target)
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected

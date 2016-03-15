@@ -47,32 +47,27 @@ def token_to_auth_context(token):
         raise exception.UnexpectedError(_('token reference must be a '
                                           'KeystoneToken type, got: %s') %
                                         type(token))
-    auth_context = {'token': token,
-                    'is_delegated_auth': False}
+    auth_context = {'token': token}
     try:
-        auth_context['user_id'] = token.user_id
+        auth_context['sub.user_id'] = token.user_id
     except KeyError:
         LOG.warning(_LW('RBAC: Invalid user data in token'))
         raise exception.Unauthorized()
 
     if token.project_scoped:
-        auth_context['project_id'] = token.project_id
-        auth_context['scope_id'] = token.project_id
-        auth_context['scope_domain_id'] = token.project_domain_id
-        auth_context['scope'] = 'project'
+        auth_context['sub.scope'] = 'project'
+        auth_context['scope.project_id'] = token.project_id
+        auth_context['scope.domain_id'] = token.project_domain_id
     elif token.domain_scoped:
-        auth_context['domain_id'] = token.domain_id
-        auth_context['scope_id'] = token.domain_id
-        auth_context['scope_domain_id'] = token.domain_id
         auth_context['scope'] = 'domain'
+        auth_context['scope.domain_id'] = token.domain_id
     else:
         LOG.debug('RBAC: Proceeding without project or domain scope')
 
     roles = token.role_names
     if roles:
-        auth_context['roles'] = roles
-
-    if token.oauth_scoped:
-        auth_context['is_delegated_auth'] = True
+        auth_context['sub.roles'] = roles
+        
+    auth_context['sub.domain_id'] = token.user_domain_id
 
     return auth_context
