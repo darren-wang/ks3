@@ -78,7 +78,7 @@ class Domain(controller.Controller):
     def create_domain(self, context, domain):
         ref = self._assign_unique_id(self._normalize_dict(domain))
         initiator = notifications._get_request_audit_info(context)
-        if ref['domain_root_user']:
+        if ref.has_key('domain_root_user'):
             init_user = ref.pop('domain_root_user')
         else:
             init_user = ''
