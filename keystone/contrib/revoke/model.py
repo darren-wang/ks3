@@ -15,10 +15,7 @@ from oslo_utils import timeutils
 
 # The set of attributes common between the RevokeEvent
 # and the dictionaries created from the token Data.
-_NAMES = ['trust_id',
-          'consumer_id',
-          'access_token_id',
-          'audit_id',
+_NAMES = ['audit_id',
           'audit_chain_id',
           'expires_at',
           'domain_id',
@@ -36,12 +33,9 @@ _EVENT_NAMES = _NAMES + ['domain_scope_id']
 
 # Values that will be in the token data but not in the event.
 # These will compared with event values that have different names.
-# For example: both trustor_id and trustee_id are compared against user_id
 _TOKEN_KEYS = ['identity_domain_id',
                'assignment_domain_id',
-               'issued_at',
-               'trustor_id',
-               'trustee_id']
+               'issued_at']
 
 
 REVOKE_KEYS = _NAMES + _EVENT_ARGS
@@ -93,12 +87,6 @@ class RevokeEvent(object):
                 ]
         event = {key: self.__dict__[key] for key in keys
                  if self.__dict__[key] is not None}
-        if self.trust_id is not None:
-            event['OS-TRUST:trust_id'] = self.trust_id
-        if self.consumer_id is not None:
-            event['OS-OAUTH1:consumer_id'] = self.consumer_id
-        if self.consumer_id is not None:
-            event['OS-OAUTH1:access_token_id'] = self.access_token_id
         if self.expires_at is not None:
             event['expires_at'] = timeutils.isotime(self.expires_at)
         if self.issued_before is not None:
@@ -191,14 +179,13 @@ class RevokeTree(object):
         The required fields are:
 
            'expires_at','user_id', 'project_id', 'identity_domain_id',
-           'assignment_domain_id', 'trust_id', 'trustor_id', 'trustee_id'
-           'consumer_id', 'access_token_id'
+           'assignment_domain_id'
 
         """
         # Alternative names to be checked in token for every field in
         # revoke tree.
         alternatives = {
-            'user_id': ['user_id', 'trustor_id', 'trustee_id'],
+            'user_id': ['user_id'],
             'domain_id': ['identity_domain_id', 'assignment_domain_id'],
             # For a domain-scoped token, the domain is in assignment_domain_id.
             'domain_scope_id': ['assignment_domain_id', ],
@@ -277,19 +264,6 @@ def build_token_values_v2(access, admin_domain_id):
     token_values['identity_domain_id'] = admin_domain_id
     token_values['assignment_domain_id'] = admin_domain_id
 
-    trust = token_data.get('trust')
-    if trust is None:
-        token_values['trust_id'] = None
-        token_values['trustor_id'] = None
-        token_values['trustee_id'] = None
-    else:
-        token_values['trust_id'] = trust['id']
-        token_values['trustor_id'] = trust['trustor_id']
-        token_values['trustee_id'] = trust['trustee_id']
-
-    token_values['consumer_id'] = None
-    token_values['access_token_id'] = None
-
     role_list = []
     # Roles are by ID in metadata and by name in the user section
     roles = access.get('metadata', {}).get('roles', [])
@@ -345,21 +319,4 @@ def build_token_values(token_data):
             role_list.append(role['id'])
     token_values['roles'] = role_list
 
-    trust = token_data.get('OS-TRUST:trust')
-    if trust is None:
-        token_values['trust_id'] = None
-        token_values['trustor_id'] = None
-        token_values['trustee_id'] = None
-    else:
-        token_values['trust_id'] = trust['id']
-        token_values['trustor_id'] = trust['trustor_user']['id']
-        token_values['trustee_id'] = trust['trustee_user']['id']
-
-    oauth1 = token_data.get('OS-OAUTH1')
-    if oauth1 is None:
-        token_values['consumer_id'] = None
-        token_values['access_token_id'] = None
-    else:
-        token_values['consumer_id'] = oauth1['consumer_id']
-        token_values['access_token_id'] = oauth1['access_token_id']
     return token_values

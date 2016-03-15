@@ -157,7 +157,6 @@ def upgrade(migrate_engine):
         sql.Column('expires', sql.DateTime, default=None),
         sql.Column('extra', ks_sql.JsonBlob.impl),
         sql.Column('valid', sql.Boolean, default=True, nullable=False),
-        sql.Column('trust_id', sql.String(length=64)),
         sql.Column('user_id', sql.String(length=64)),
         mysql_engine='InnoDB',
         mysql_charset='utf8')
@@ -222,7 +221,6 @@ def upgrade(migrate_engine):
     sql.Index('ix_actor_id', assignment.c.actor_id).create()
 
     sql.Index('ix_token_user_id', token.c.user_id).create()
-    sql.Index('ix_token_trust_id', token.c.trust_id).create()
     sql.Index('service_id', endpoint.c.service_id).create()
     sql.Index('group_id', user_group_membership.c.group_id).create()
     sql.Index('policy_id', rule.c.policy_id).create()

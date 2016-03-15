@@ -101,28 +101,12 @@ class V3TokenDataHelper(object):
         _check_roles(roles, user_id, project_id, domain_id)
         return roles
 
-    def _populate_user(self, token_data, user_id, trust):
+    def _populate_user(self, token_data, user_id):
         if 'user' in token_data:
             # no need to repopulate user if it already exists
             return
 
         user_ref = self.identity_api.get_user(user_id)
-        if CONF.trust.enabled and trust and 'OS-TRUST:trust' not in token_data:
-            trustor_user_ref = (self.identity_api.get_user(
-                                trust['trustor_user_id']))
-            try:
-                self.identity_api.assert_user_enabled(trust['trustor_user_id'])
-            except AssertionError:
-                raise exception.Forbidden(_('Trustor is disabled.'))
-            if trust['impersonation']:
-                user_ref = trustor_user_ref
-            token_data['OS-TRUST:trust'] = (
-                {
-                    'id': trust['id'],
-                    'trustor_user': {'id': trust['trustor_user_id']},
-                    'trustee_user': {'id': trust['trustee_user_id']},
-                    'impersonation': trust['impersonation']
-                })
         filtered_user = {
             'id': user_ref['id'],
             'name': user_ref['name'],
@@ -130,7 +114,7 @@ class V3TokenDataHelper(object):
         token_data['user'] = filtered_user
 
     def _populate_roles(self, token_data, user_id, domain_id, project_id,
-                        trust, access_token):
+                        access_token):
         if 'roles' in token_data:
             # no need to repopulate roles
             return
@@ -147,33 +131,19 @@ class V3TokenDataHelper(object):
             token_data['roles'] = filtered_roles
             return
 
-        if CONF.trust.enabled and trust:
-            token_user_id = trust['trustor_user_id']
-            token_project_id = trust['project_id']
-            # trusts do not support domains yet
-            token_domain_id = None
-        else:
-            token_user_id = user_id
-            token_project_id = project_id
-            token_domain_id = domain_id
+        
+        token_user_id = user_id
+        token_project_id = project_id
+        token_domain_id = domain_id
 
         if token_domain_id or token_project_id:
             roles = self._get_roles_for_user(token_user_id,
                                              token_domain_id,
                                              token_project_id)
             filtered_roles = []
-            if CONF.trust.enabled and trust:
-                for trust_role in trust['roles']:
-                    match_roles = [x for x in roles
-                                   if x['id'] == trust_role['id']]
-                    if match_roles:
-                        filtered_roles.append(match_roles[0])
-                    else:
-                        raise exception.Forbidden(
-                            _('Trustee has no delegated roles.'))
-            else:
-                for role in roles:
-                    filtered_roles.append({'id': role['id'],
+            
+            for role in roles:
+                filtered_roles.append({'id': role['id'],
                                            'name': role['name']})
 
             # user has no project or domain roles, therefore access denied
@@ -194,20 +164,18 @@ class V3TokenDataHelper(object):
             token_data['roles'] = filtered_roles
 
     def _populate_service_catalog(self, token_data, user_id,
-                                  domain_id, project_id, trust):
+                                  domain_id, project_id):
         if 'catalog' in token_data:
             # no need to repopulate service catalog
             return
 
-        if CONF.trust.enabled and trust:
-            user_id = trust['trustor_user_id']
         if project_id or domain_id:
             service_catalog = self.catalog_api.get_v3_catalog(
                 user_id, project_id)
-            # TODO(ayoung): Enforce Endpoints for trust
+
             token_data['catalog'] = service_catalog
 
-    def _populate_token_dates(self, token_data, expires=None, trust=None,
+    def _populate_token_dates(self, token_data, expires=None,
                               issued_at=None):
         if not expires:
             expires = provider.default_expire_time()
@@ -230,7 +198,7 @@ class V3TokenDataHelper(object):
 
     def get_token_data(self, user_id, method_names, extras=None,
                        domain_id=None, project_id=None, expires=None,
-                       trust=None, token=None, include_catalog=True,
+                       token=None, include_catalog=True,
                        bind=None, access_token=None, issued_at=None,
                        audit_info=None):
         if extras is None:
@@ -249,23 +217,19 @@ class V3TokenDataHelper(object):
                 if x in token:
                     token_data[x] = token[x]
 
-        if CONF.trust.enabled and trust:
-            if user_id != trust['trustee_user_id']:
-                raise exception.Forbidden(_('User is not a trustee.'))
-
         if bind:
             token_data['bind'] = bind
 
         self._populate_scope(token_data, domain_id, project_id)
-        self._populate_user(token_data, user_id, trust)
-        self._populate_roles(token_data, user_id, domain_id, project_id, trust,
+        self._populate_user(token_data, user_id)
+        self._populate_roles(token_data, user_id, domain_id, project_id,
                              access_token)
         self._populate_audit_info(token_data, audit_info)
 
         if include_catalog:
             self._populate_service_catalog(token_data, user_id, domain_id,
-                                           project_id, trust)
-        self._populate_token_dates(token_data, expires=expires, trust=trust,
+                                           project_id)
+        self._populate_token_dates(token_data, expires=expires,
                                    issued_at=issued_at)
         return {'token': token_data}
 
@@ -291,12 +255,8 @@ class BaseProvider(provider.Provider):
 
     def issue_v3_token(self, user_id, method_names, expires_at=None,
                        project_id=None, domain_id=None, auth_context=None,
-                       trust=None, metadata_ref=None, include_catalog=True,
+                       metadata_ref=None, include_catalog=True,
                        parent_audit_id=None):
-        # for V2, trust is stashed in metadata_ref
-        if (CONF.trust.enabled and not trust and metadata_ref and
-                'trust_id' in metadata_ref):
-            trust = self.trust_api.get_trust(metadata_ref['trust_id'])
 
         token_ref = None
 
@@ -309,7 +269,6 @@ class BaseProvider(provider.Provider):
             domain_id=domain_id,
             project_id=project_id,
             expires=expires_at,
-            trust=trust,
             bind=auth_context.get('bind') if auth_context else None,
             token=token_ref,
             include_catalog=include_catalog,
@@ -347,27 +306,8 @@ class BaseProvider(provider.Provider):
                 # scoped to project in non-default domain is prohibited
                 if project_domain_id != CONF.identity.admin_domain_id:
                     raise exception.Unauthorized(msg)
-            # if token is scoped to trust, both trustor and trustee must
-            # be in the default domain. Furthermore, the delegated project
-            # must also be in the default domain
+
             metadata_ref = token_ref['metadata']
-            if CONF.trust.enabled and 'trust_id' in metadata_ref:
-                trust_ref = self.trust_api.get_trust(metadata_ref['trust_id'])
-                trustee_user_ref = self.identity_api.get_user(
-                    trust_ref['trustee_user_id'])
-                if (trustee_user_ref['domain_id'] !=
-                        CONF.identity.admin_domain_id):
-                    raise exception.Unauthorized(msg)
-                trustor_user_ref = self.identity_api.get_user(
-                    trust_ref['trustor_user_id'])
-                if (trustor_user_ref['domain_id'] !=
-                        CONF.identity.admin_domain_id):
-                    raise exception.Unauthorized(msg)
-                project_ref = self.resource_api.get_project(
-                    trust_ref['project_id'])
-                if (project_ref['domain_id'] !=
-                        CONF.identity.admin_domain_id):
-                    raise exception.Unauthorized(msg)
 
     def validate_v3_token(self, token_ref):
         # FIXME(gyee): performance or correctness? Should we return the
@@ -378,11 +318,6 @@ class BaseProvider(provider.Provider):
         # Lets go with the cached token strategy. Since token
         # management layer is now pluggable, one can always provide
         # their own implementation to suit their needs.
-
-        trust_id = token_ref.get('trust_id')
-        if trust_id:
-            # token trust validation
-            self.trust_api.get_trust(trust_id)
 
         token_data = token_ref.get('token_data')
         if not token_data or 'token' not in token_data:

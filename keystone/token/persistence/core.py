@@ -37,7 +37,7 @@ REVOCATION_MEMOIZE = cache.get_memoization_decorator(
 
 
 @dependency.requires('assignment_api', 'identity_api', 'resource_api',
-                     'token_provider_api', 'trust_api')
+                     'token_provider_api')
 class PersistenceManager(manager.Manager):
     """Default pivot point for the Token backend.
 
@@ -96,11 +96,11 @@ class PersistenceManager(manager.Manager):
         self._invalidate_individual_token_cache(unique_id)
         self.invalidate_revocation_list()
 
-    def delete_tokens(self, user_id, tenant_id=None, trust_id=None,
+    def delete_tokens(self, user_id, project_id=None,
                       consumer_id=None):
         if not CONF.token.revoke_by_id:
             return
-        token_list = self.driver.delete_tokens(user_id, tenant_id, trust_id,
+        token_list = self.driver.delete_tokens(user_id, project_id,
                                                consumer_id)
         for token_id in token_list:
             unique_id = self.token_provider_api.unique_id(token_id)
@@ -144,32 +144,10 @@ class PersistenceManager(manager.Manager):
     def delete_tokens_for_user(self, user_id, project_id=None):
         """Delete all tokens for a given user or user-project combination.
 
-        This method adds in the extra logic for handling trust-scoped token
-        revocations in a single call instead of needing to explicitly handle
-        trusts in the caller's logic.
         """
         if not CONF.token.revoke_by_id:
             return
-        self.delete_tokens(user_id, tenant_id=project_id)
-        for trust in self.trust_api.list_trusts_for_trustee(user_id):
-            # Ensure we revoke tokens associated to the trust / project
-            # user_id combination.
-            self.delete_tokens(user_id, trust_id=trust['id'],
-                               tenant_id=project_id)
-        for trust in self.trust_api.list_trusts_for_trustor(user_id):
-            # Ensure we revoke tokens associated to the trust / project /
-            # user_id combination where the user_id is the trustor.
-
-            # NOTE(morganfainberg): This revocation is a bit coarse, but it
-            # covers a number of cases such as disabling of the trustor user,
-            # deletion of the trustor user (for any number of reasons). It
-            # might make sense to refine this and be more surgical on the
-            # deletions (e.g. don't revoke tokens for the trusts when the
-            # trustor changes password). For now, to maintain previous
-            # functionality, this will continue to be a bit overzealous on
-            # revocations.
-            self.delete_tokens(trust['trustee_user_id'], trust_id=trust['id'],
-                               tenant_id=project_id)
+        self.delete_tokens(user_id, project_id=project_id)
 
     def delete_tokens_for_users(self, user_ids, project_id=None):
         """Delete all tokens for a list of user_ids.
@@ -261,7 +239,7 @@ class Driver(object):
                 expires=''
                 id=token_id,
                 user=user_ref,
-                tenant=tenant_ref,
+                project=project_ref,
                 metadata=metadata_ref
             }
 
@@ -284,25 +262,20 @@ class Driver(object):
         raise exception.NotImplemented()  # pragma: no cover
 
     @abc.abstractmethod
-    def delete_tokens(self, user_id, tenant_id=None, trust_id=None,
+    def delete_tokens(self, user_id, project_id=None,
                       consumer_id=None):
         """Deletes tokens by user.
 
-        If the tenant_id is not None, only delete the tokens by user id under
-        the specified tenant.
-
-        If the trust_id is not None, it will be used to query tokens and the
-        user_id will be ignored.
+        If the project_id is not None, only delete the tokens by user id under
+        the specified project.
 
         If the consumer_id is not None, only delete the tokens by consumer id
         that match the specified consumer id.
 
         :param user_id: identity of user
         :type user_id: string
-        :param tenant_id: identity of the tenant
-        :type tenant_id: string
-        :param trust_id: identity of the trust
-        :type trust_id: string
+        :param project_id: identity of the project
+        :type project_id: string
         :param consumer_id: identity of the consumer
         :type consumer_id: string
         :returns: The tokens that have been deleted.
@@ -312,8 +285,7 @@ class Driver(object):
         if not CONF.token.revoke_by_id:
             return
         token_list = self._list_tokens(user_id,
-                                       tenant_id=tenant_id,
-                                       trust_id=trust_id,
+                                       project_id=project_id,
                                        consumer_id=consumer_id)
 
         for token in token_list:
@@ -324,7 +296,7 @@ class Driver(object):
         return token_list
 
     @abc.abstractmethod
-    def _list_tokens(self, user_id, tenant_id=None, trust_id=None,
+    def _list_tokens(self, user_id, project_id=None,
                      consumer_id=None):
         """Returns a list of current token_id's for a user
 
@@ -334,10 +306,8 @@ class Driver(object):
 
         :param user_id: identity of the user
         :type user_id: string
-        :param tenant_id: identity of the tenant
-        :type tenant_id: string
-        :param trust_id: identity of the trust
-        :type trust_id: string
+        :param project_id: identity of the project
+        :type project_id: string
         :param consumer_id: identity of the consumer
         :type consumer_id: string
         :returns: list of token_id's

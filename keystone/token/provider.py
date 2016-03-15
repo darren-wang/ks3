@@ -121,10 +121,9 @@ class Manager(manager.Manager):
 
     def _register_callback_listeners(self):
         # This is used by the @dependency.provider decorator to register the
-        # provider (token_provider_api) manager to listen for trust deletions.
+        # provider (token_provider_api) manager to listen.
         callbacks = {
             notifications.ACTIONS.deleted: [
-                ['OS-TRUST:trust', self._trust_deleted_event_callback],
                 ['user', self._delete_user_tokens_callback],
                 ['domain', self._delete_domain_tokens_callback],
             ],
@@ -270,11 +269,11 @@ class Manager(manager.Manager):
 
     def issue_v3_token(self, user_id, method_names, expires_at=None,
                        project_id=None, domain_id=None, auth_context=None,
-                       trust=None, metadata_ref=None, include_catalog=True,
+                       metadata_ref=None, include_catalog=True,
                        parent_audit_id=None):
         token_id, token_data = self.driver.issue_v3_token(
             user_id, method_names, expires_at, project_id, domain_id,
-            auth_context, trust, metadata_ref, include_catalog,
+            auth_context, metadata_ref, include_catalog,
             parent_audit_id)
 
         if metadata_ref is None:
@@ -288,11 +287,6 @@ class Manager(manager.Manager):
             role_ids = [r['id'] for r in token_data['token']['roles']]
             metadata_ref = {'roles': role_ids}
 
-        if trust:
-            metadata_ref.setdefault('trust_id', trust['id'])
-            metadata_ref.setdefault('trustee_user_id',
-                                    trust['trustee_user_id'])
-
         data = dict(key=token_id,
                     id=token_id,
                     expires=token_data['token']['expires_at'],
@@ -300,7 +294,6 @@ class Manager(manager.Manager):
                     tenant=token_data['token'].get('project'),
                     metadata=metadata_ref,
                     token_data=token_data,
-                    trust_id=trust['id'] if trust else None,
                     token_version=self.V3)
         if self._needs_persistence:
             self._create_token(token_id, data)
@@ -361,14 +354,6 @@ class Manager(manager.Manager):
 
     def list_revoked_tokens(self):
         return self._persistence.list_revoked_tokens()
-
-    def _trust_deleted_event_callback(self, service, resource_type, operation,
-                                      payload):
-        if CONF.token.revoke_by_id:
-            trust_id = payload['resource_info']
-            trust = self.trust_api.get_trust(trust_id, deleted=True)
-            self._persistence.delete_tokens(user_id=trust['trustor_user_id'],
-                                            trust_id=trust_id)
 
     def _delete_user_tokens_callback(self, service, resource_type, operation,
                                      payload):
@@ -439,7 +424,7 @@ class Provider(object):
     @abc.abstractmethod
     def issue_v3_token(self, user_id, method_names, expires_at=None,
                        project_id=None, domain_id=None, auth_context=None,
-                       trust=None, metadata_ref=None, include_catalog=True,
+                       metadata_ref=None, include_catalog=True,
                        parent_audit_id=None):
         """Issue a V3 Token.
 
@@ -455,8 +440,6 @@ class Provider(object):
         :type domain_id: string
         :param auth_context: optional context from the authorization plugins
         :type auth_context: dict
-        :param trust: optional trust reference
-        :type trust: dict
         :param metadata_ref: optional metadata reference
         :type metadata_ref: dict
         :param include_catalog: optional, include the catalog in token data

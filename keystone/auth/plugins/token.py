@@ -50,14 +50,6 @@ class Token(auth.AuthMethodHandler):
 def token_authenticate(context, auth_payload, user_context, token_ref):
     try:
 
-        # Do not allow tokens used for delegation to
-        # create another token, or perform any changes of
-        # state in Keystone. To do so is to invite elevation of
-        # privilege attacks
-
-        if token_ref.oauth_scoped or token_ref.trust_scoped:
-            raise exception.Forbidden()
-
         if not CONF.token.allow_rescope_scoped_token:
             # Do not allow conversion from scoped tokens.
             if token_ref.project_scoped or token_ref.domain_scoped:

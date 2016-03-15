@@ -139,10 +139,9 @@ class AuthInfo(object):
         self.context = context
         self.auth = auth
         self._scope_data = (None, None, None, None)
-        # self._scope_data is (domain_id, project_id, trust_ref, unscoped)
+        # self._scope_data is (domain_id, project_id, unscoped)
         # project scope: (None, project_id, None, None)
         # domain scope: (domain_id, None, None, None)
-        # trust scope: (None, None, trust_ref, None)
         # unscoped: (None, None, None, 'unscoped')
 
     def _assert_project_is_enabled(self, project_ref):
@@ -211,26 +210,15 @@ class AuthInfo(object):
         self._assert_project_is_enabled(project_ref)
         return project_ref
 
-    def _lookup_trust(self, trust_info):
-        trust_id = trust_info.get('id')
-        if not trust_id:
-            raise exception.ValidationError(attribute='trust_id',
-                                            target='trust')
-        trust = self.trust_api.get_trust(trust_id)
-        if not trust:
-            raise exception.TrustNotFound(trust_id=trust_id)
-        return trust
-
     def _validate_and_normalize_scope_data(self):
         """Validate and normalize scope data."""
         if 'scope' not in self.auth:
             return
         if sum(['project' in self.auth['scope'],
                 'domain' in self.auth['scope'],
-                'unscoped' in self.auth['scope'],
-                'OS-TRUST:trust' in self.auth['scope']]) != 1:
+                'unscoped' in self.auth['scope']) != 1:
             raise exception.ValidationError(
-                attribute='project, domain, OS-TRUST:trust or unscoped',
+                attribute='project, domain or unscoped',
                 target='scope')
         if 'unscoped' in self.auth['scope']:
             self._scope_data = (None, None, None, 'unscoped')
@@ -241,18 +229,6 @@ class AuthInfo(object):
         elif 'domain' in self.auth['scope']:
             domain_ref = self._lookup_domain(self.auth['scope']['domain'])
             self._scope_data = (domain_ref['id'], None, None, None)
-        elif 'OS-TRUST:trust' in self.auth['scope']:
-            if not CONF.trust.enabled:
-                raise exception.Forbidden('Trusts are disabled.')
-            trust_ref = self._lookup_trust(
-                self.auth['scope']['OS-TRUST:trust'])
-            # TODO(ayoung): when trusts support domains, fill in domain data
-            if trust_ref.get('project_id') is not None:
-                project_ref = self._lookup_project(
-                    {'id': trust_ref['project_id']})
-                self._scope_data = (None, project_ref['id'], trust_ref, None)
-            else:
-                self._scope_data = (None, None, trust_ref, None)
 
     def _validate_auth_methods(self):
         if 'identity' not in self.auth:
@@ -315,33 +291,23 @@ class AuthInfo(object):
 
         Verify and return the scoping information.
 
-        :returns: (domain_id, project_id, trust_ref, unscoped).
-                   If scope to a project, (None, project_id, None, None)
+        :returns: (domain_id, project_id, unscoped).
+                   If scope to a project, (None, project_id, None)
                    will be returned.
-                   If scoped to a domain, (domain_id, None, None, None)
+                   If scoped to a domain, (domain_id, None, None)
                    will be returned.
-                   If scoped to a trust, (None, project_id, trust_ref, None),
-                   Will be returned, where the project_id comes from the
-                   trust definition.
-                   If unscoped, (None, None, None, 'unscoped') will be
+                   If unscoped, (None, None, 'unscoped') will be
                    returned.
 
         """
         return self._scope_data
 
-    def set_scope(self, domain_id=None, project_id=None, trust=None,
-                  unscoped=None):
+    def set_scope(self, domain_id=None, project_id=None, unscoped=None):
         """Set scope information."""
         if domain_id and project_id:
             msg = _('Scoping to both domain and project is not allowed')
             raise ValueError(msg)
-        if domain_id and trust:
-            msg = _('Scoping to both domain and trust is not allowed')
-            raise ValueError(msg)
-        if project_id and trust:
-            msg = _('Scoping to both project and trust is not allowed')
-            raise ValueError(msg)
-        self._scope_data = (domain_id, project_id, trust, unscoped)
+        self._scope_data = (domain_id, project_id, unscoped)
 
 
 @dependency.requires('assignment_api', 'catalog_api', 'identity_api',
@@ -369,48 +335,38 @@ class Auth(controller.Controller):
         """Authenticate user and issue a token."""
         include_catalog = 'nocatalog' not in context['query_string']
 
-        try:
-            auth_info = AuthInfo.create(context, auth=auth)
-            auth_context = AuthContext(extras={},
+        auth_info = AuthInfo.create(context, auth=auth)
+        auth_context = AuthContext(extras={},
                                        method_names=[],
                                        bind={})
-            self.authenticate(context, auth_info, auth_context)
-            if auth_context.get('access_token_id'):
+        self.authenticate(context, auth_info, auth_context)
+        if auth_context.get('access_token_id'):
                 auth_info.set_scope(None, auth_context['project_id'], None)
-            self._check_and_set_default_scoping(auth_info, auth_context)
-            (domain_id, project_id, trust, unscoped) = auth_info.get_scope()
+        self._check_and_set_default_scoping(auth_info, auth_context)
+        (domain_id, project_id, unscoped) = auth_info.get_scope()
 
-            method_names = auth_info.get_method_names()
-            method_names += auth_context.get('method_names', [])
+        method_names = auth_info.get_method_names()
+        method_names += auth_context.get('method_names', [])
             # make sure the list is unique
-            method_names = list(set(method_names))
-            expires_at = auth_context.get('expires_at')
+        method_names = list(set(method_names))
+        expires_at = auth_context.get('expires_at')
             # NOTE(morganfainberg): define this here so it is clear what the
             # argument is during the issue_v3_token provider call.
-            metadata_ref = None
+        metadata_ref = None
 
-            token_audit_id = auth_context.get('audit_id')
+        token_audit_id = auth_context.get('audit_id')
 
-            (token_id, token_data) = self.token_provider_api.issue_v3_token(
+        (token_id, token_data) = self.token_provider_api.issue_v3_token(
                 auth_context['user_id'], method_names, expires_at, project_id,
-                domain_id, auth_context, trust, metadata_ref, include_catalog,
+                domain_id, auth_context, metadata_ref, include_catalog,
                 parent_audit_id=token_audit_id)
 
-            # NOTE(wanghong): We consume a trust use only when we are using
-            # trusts and have successfully issued a token.
-            if trust:
-                self.trust_api.consume_use(trust['id'])
-
-            return render_token_data_response(token_id, token_data,
+        return render_token_data_response(token_id, token_data,
                                               created=True)
-        except exception.TrustNotFound as e:
-            raise exception.Unauthorized(e)
 
     def _check_and_set_default_scoping(self, auth_info, auth_context):
-        (domain_id, project_id, trust, unscoped) = auth_info.get_scope()
-        if trust:
-            project_id = trust['project_id']
-        if domain_id or project_id or trust:
+        (domain_id, project_id, unscoped) = auth_info.get_scope()
+        if domain_id or project_id:
             # scope is specified
             return
 
@@ -531,7 +487,7 @@ class Auth(controller.Controller):
             grp_refs = self.assignment_api.list_projects_for_groups(group_ids)
 
         refs = self._combine_lists_uniquely(user_refs, grp_refs)
-        return resource_controllers.ProjectV3.wrap_collection(context, refs)
+        return resource_controllers.Project.wrap_collection(context, refs)
 
     @controller.protected()
     def get_auth_domains(self, context):
@@ -552,7 +508,7 @@ class Auth(controller.Controller):
             grp_refs = self.assignment_api.list_domains_for_groups(group_ids)
 
         refs = self._combine_lists_uniquely(user_refs, grp_refs)
-        return resource_controllers.DomainV3.wrap_collection(context, refs)
+        return resource_controllers.Domain.wrap_collection(context, refs)
 
     @controller.protected()
     def get_auth_catalog(self, context):

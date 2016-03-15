@@ -176,44 +176,6 @@ class KeystoneToken(dict):
         return self.project_scoped or self.domain_scoped
 
     @property
-    def trust_id(self):
-        return self.get('OS-TRUST:trust', {}).get('id')
-
-    @property
-    def trust_scoped(self):
-        return 'OS-TRUST:trust' in self
-
-    @property
-    def trustee_user_id(self):
-        return self.get(
-                'OS-TRUST:trust', {}).get('trustee_user_id')
-
-    @property
-    def trustor_user_id(self):
-        return self.get(
-                'OS-TRUST:trust', {}).get('trustor_user_id')
-
-    @property
-    def trust_impersonation(self):
-        return self.get('OS-TRUST:trust', {}).get('impersonation')
-
-    @property
-    def oauth_scoped(self):
-        return 'OS-OAUTH1' in self
-
-    @property
-    def oauth_access_token_id(self):
-        if self.oauth_scoped:
-            return self['OS-OAUTH1']['access_token_id']
-        return None
-
-    @property
-    def oauth_consumer_id(self):
-        if self.oauth_scoped:
-            return self['OS-OAUTH1']['consumer_id']
-        return None
-
-    @property
     def role_ids(self):
             return [r['id'] for r in self.get('roles', [])]
 

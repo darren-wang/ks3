@@ -66,11 +66,7 @@ CADF_TYPE_MAP = {
     'region': taxonomy.SECURITY_REGION,
     'endpoint': taxonomy.SECURITY_ENDPOINT,
     'service': taxonomy.SECURITY_SERVICE,
-    'policy': taxonomy.SECURITY_POLICY,
-    'OS-TRUST:trust': taxonomy.SECURITY_TRUST,
-    'OS-OAUTH1:access_token': taxonomy.SECURITY_CREDENTIAL,
-    'OS-OAUTH1:request_token': taxonomy.SECURITY_CREDENTIAL,
-    'OS-OAUTH1:consumer': taxonomy.SECURITY_ACCOUNT,
+    'policy': taxonomy.SECURITY_POLICY
 }
 
 SAML_AUDIT_TYPE = 'http://docs.oasis-open.org/security/saml/v2.0'

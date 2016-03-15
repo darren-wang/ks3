@@ -68,17 +68,6 @@ def token_to_auth_context(token):
     else:
         LOG.debug('RBAC: Proceeding without project or domain scope')
 
-    if token.trust_scoped:
-        auth_context['is_delegated_auth'] = True
-        auth_context['trust_id'] = token.trust_id
-        auth_context['trustor_id'] = token.trustor_user_id
-        auth_context['trustee_id'] = token.trustee_user_id
-        auth_context['scope'] = 'trust'
-    else:
-        auth_context['trust_id'] = None
-        auth_context['trustor_id'] = None
-        auth_context['trustee_id'] = None
-
     roles = token.role_names
     if roles:
         auth_context['roles'] = roles

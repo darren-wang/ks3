@@ -67,8 +67,6 @@ def v3_app_factory(global_conf, **local_conf):
     _routers = []
 
     router_modules = [assignment, auth, catalog, identity, policy, resource]
-#    if CONF.trust.enabled:
-#        router_modules.append(trust)
 
     for module in router_modules:
         routers_instance = module.routers.Routers()

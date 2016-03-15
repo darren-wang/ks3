@@ -27,9 +27,6 @@ def upgrade(migrate_engine):
         sql.Column('project_id', sql.String(64)),
         sql.Column('user_id', sql.String(64)),
         sql.Column('role_id', sql.String(64)),
-        sql.Column('trust_id', sql.String(64)),
-        sql.Column('consumer_id', sql.String(64)),
-        sql.Column('access_token_id', sql.String(64)),
         sql.Column('issued_before', sql.DateTime(), nullable=False),
         sql.Column('expires_at', sql.DateTime()),
         sql.Column('revoked_at', sql.DateTime(), index=True, nullable=False))

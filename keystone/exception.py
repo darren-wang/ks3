@@ -302,14 +302,6 @@ class MappingNotFound(NotFound):
     message_format = _("Could not find mapping: %(mapping_id)s")
 
 
-class TrustNotFound(NotFound):
-    message_format = _("Could not find trust: %(trust_id)s")
-
-
-class TrustUseLimitReached(Forbidden):
-    message_format = _("No remaining uses for trust: %(trust_id)s")
-
-
 class VersionNotFound(NotFound):
     message_format = _("Could not find version: %(version)s")
 
@@ -379,11 +371,6 @@ class UnexpectedError(SecurityError):
 
     code = 500
     title = 'Internal Server Error'
-
-
-class TrustConsumeMaximumAttempt(UnexpectedError):
-    debug_message_format = _("Unable to consume trust %(trust_id)s, unable to "
-                             "acquire lock.")
 
 
 class CertificateFilesUnavailable(UnexpectedError):

@@ -114,24 +114,6 @@ class Token(token.persistence.Driver):
         user_id = data['user']['id']
         user_key = self._prefix_user_id(user_id)
         self._update_user_token_list(user_key, token_id, expires_str)
-        if CONF.trust.enabled and data.get('trust_id'):
-            # NOTE(morganfainberg): If trusts are enabled and this is a trust
-            # scoped token, we add the token to the trustee list as well.  This
-            # allows password changes of the trustee to also expire the token.
-            # There is no harm in placing the token in multiple lists, as
-            # _list_tokens is smart enough to handle almost any case of
-            # valid/invalid/expired for a given token.
-            token_data = data_copy['token_data']
-            if data_copy['token_version'] == token.provider.V3:
-                trustee_user_id = token_data['OS-TRUST:trust'][
-                    'trustee_user_id']
-            else:
-                raise exception.UnsupportedTokenVersionException(
-                    _('Unknown token version %s') %
-                    data_copy.get('token_version'))
-
-            trustee_key = self._prefix_user_id(trustee_user_id)
-            self._update_user_token_list(trustee_key, token_id, expires_str)
 
         return data_copy
 
@@ -252,12 +234,11 @@ class Token(token.persistence.Driver):
             self._add_to_revocation_list(data, lock)
         return result
 
-    def delete_tokens(self, user_id, tenant_id=None, trust_id=None,
+    def delete_tokens(self, user_id, project_id=None,
                       consumer_id=None):
         return super(Token, self).delete_tokens(
             user_id=user_id,
-            tenant_id=tenant_id,
-            trust_id=trust_id,
+            project_id=project_id,
             consumer_id=consumer_id,
         )
 
@@ -280,15 +261,10 @@ class Token(token.persistence.Driver):
             raise
         return token_id, expires
 
-    def _token_match_tenant(self, token_ref, tenant_id):
-        if token_ref.get('tenant'):
-            return token_ref['tenant'].get('id') == tenant_id
+    def _token_match_project(self, token_ref, project_id):
+        if token_ref.get('project'):
+            return token_ref['project'].get('id') == project_id
         return False
-
-    def _token_match_trust(self, token_ref, trust_id):
-        if not token_ref.get('trust_id'):
-            return False
-        return token_ref['trust_id'] == trust_id
 
     def _token_match_consumer(self, token_ref, consumer_id):
         try:
@@ -297,7 +273,7 @@ class Token(token.persistence.Driver):
         except KeyError:
             return False
 
-    def _list_tokens(self, user_id, tenant_id=None, trust_id=None,
+    def _list_tokens(self, user_id, project_id=None,
                      consumer_id=None):
         # This function is used to generate the list of tokens that should be
         # revoked when revoking by token identifiers.  This approach will be
@@ -329,11 +305,8 @@ class Token(token.persistence.Driver):
                 # NOTE(morganfainberg): Token doesn't exist, skip it.
                 continue
             if token_ref:
-                if tenant_id is not None:
-                    if not self._token_match_tenant(token_ref, tenant_id):
-                        continue
-                if trust_id is not None:
-                    if not self._token_match_trust(token_ref, trust_id):
+                if project_id is not None:
+                    if not self._token_match_project(token_ref, project_id):
                         continue
                 if consumer_id is not None:
                     if not self._token_match_consumer(token_ref, consumer_id):

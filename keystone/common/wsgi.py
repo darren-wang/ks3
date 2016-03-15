@@ -342,29 +342,6 @@ class Application(BaseApplication):
             msg = _('%s field(s) cannot be empty') % ', '.join(missing_attrs)
             raise exception.ValidationError(message=msg)
 
-    def _get_trust_id_for_request(self, context):
-        """Get the trust_id for a call.
-
-        Retrieve the trust_id from the token
-        Returns None if token is not trust scoped
-        """
-        if ('token_id' not in context or
-                context.get('token_id') == CONF.admin_token):
-            LOG.debug(('will not lookup trust as the request auth token is '
-                       'either absent or it is the system admin token'))
-            return None
-
-        try:
-            token_data = self.token_provider_api.validate_token(
-                context['token_id'])
-        except exception.TokenNotFound:
-            LOG.warning(_LW('Invalid token in _get_trust_id_for_request'))
-            raise exception.Unauthorized()
-
-        token_ref = token_model.KeystoneToken(token_id=context['token_id'],
-                                              token_data=token_data)
-        return token_ref.trust_id
-
     @classmethod
     def base_url(cls, context, endpoint_type):
         url = CONF['%s_endpoint' % endpoint_type]
