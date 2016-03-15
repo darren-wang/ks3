@@ -403,13 +403,6 @@ class Manager(manager.Manager):
         return ret
 
     def delete_domain(self, domain_id, initiator=None):
-        # explicitly forbid deleting the default domain (this should be a
-        # carefully orchestrated manual process involving configuration
-        # changes, etc)
-        if domain_id == CONF.identity.admin_domain_id:
-            raise exception.ForbiddenAction(action=_('delete the default '
-                                                     'domain'))
-
         domain = self.driver.get_domain(domain_id)
 
         # To help avoid inadvertent deletes, we insist that the domain
