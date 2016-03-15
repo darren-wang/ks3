@@ -133,10 +133,13 @@ def protected(callback=None):
 
                 # Add in the kwargs, which means reqBody in create and 
                 # update operations.
-                reqBody = {}
+                subParams = {}
                 for k in kwargs.iterkeys():
-                    reqBody['reqBody.'+k] = kwargs[k]
-                target.update(reqBody)
+                    if len(k.split('.')) == 1:
+                        subParams['url.'+k] = kwargs[k]
+                    else:
+                        subParams['reqBody.'+k] = kwargs[k]
+                target.update(subParams)
                 target = utils.flatten_dict(target)
                 
                 # Isolation check
