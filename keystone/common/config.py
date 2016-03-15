@@ -415,6 +415,7 @@ FILE_OPTIONS = {
                    default='keystone.auth.plugins.oauth1.OAuth',
                    help='The oAuth1.0 auth plugin module.'),
     ],
+    
     'paste_deploy': [
         cfg.StrOpt('config_file', default='keystone-paste.ini',
                    help='Name of the paste configuration file that defines '

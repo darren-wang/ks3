@@ -143,8 +143,8 @@ class Role(Model):
 
     """
 
-    required_keys = ('id', 'name')
-    optional_keys = tuple()
+    required_keys = ('id', 'name', 'domain_id')
+    optional_keys = ('description', 'extra')
 
 
 class Domain(Model):

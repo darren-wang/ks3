@@ -221,14 +221,14 @@ class AuthInfo(object):
                 attribute='project, domain or unscoped',
                 target='scope')
         if 'unscoped' in self.auth['scope']:
-            self._scope_data = (None, None, None, 'unscoped')
+            self._scope_data = (None, None, 'unscoped')
             return
         if 'project' in self.auth['scope']:
             project_ref = self._lookup_project(self.auth['scope']['project'])
-            self._scope_data = (None, project_ref['id'], None, None)
+            self._scope_data = (None, project_ref['id'], None)
         elif 'domain' in self.auth['scope']:
             domain_ref = self._lookup_domain(self.auth['scope']['domain'])
-            self._scope_data = (domain_ref['id'], None, None, None)
+            self._scope_data = (domain_ref['id'], None, None)
 
     def _validate_auth_methods(self):
         if 'identity' not in self.auth:
@@ -340,8 +340,7 @@ class Auth(controller.Controller):
                                        method_names=[],
                                        bind={})
         self.authenticate(context, auth_info, auth_context)
-        if auth_context.get('access_token_id'):
-                auth_info.set_scope(None, auth_context['project_id'], None)
+
         self._check_and_set_default_scoping(auth_info, auth_context)
         (domain_id, project_id, unscoped) = auth_info.get_scope()
 

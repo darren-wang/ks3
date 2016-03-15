@@ -51,7 +51,7 @@ class Domain(controller.Controller):
         init_user = {
          'domain_id': domain_id,
          'password': init_pass,
-         'description': 'Initial user of domain: %s.' %domain_name,
+         'description': 'Initial user of domain: %s' %domain_name,
          'enabled':True
         }
         if user_name:
@@ -86,11 +86,13 @@ class Domain(controller.Controller):
             init_user = ''
         ref = self.resource_api.create_domain(ref['id'], ref, initiator)
         domain_ref = Domain.wrap_member(context, ref)
+
         user_ref = self._create_init_user(init_user, ref['id'], initiator)
         role_ref = self._create_init_role(ref['id'], initiator)
         self.assignment_api.create_grant(role_ref['role']['id'],
                                     user_id=user_ref['user']['id'],
                                     domain_id=domain_ref['domain']['id'])
+
         domain_ref.update(user_ref)
         domain_ref.update(role_ref)
         return domain_ref
