@@ -137,7 +137,7 @@ def protected(callback=None):
                 LOG.debug(kwargs)
 		subParams = {}
                 for k in kwargs.iterkeys():
-                    if len(k.split('.')) == 1:
+                    if isinstance(kwargs[k], str):
                         subParams['url.'+k] = kwargs[k]
                     else:
                         subParams['reqBody.'+k] = kwargs[k]
