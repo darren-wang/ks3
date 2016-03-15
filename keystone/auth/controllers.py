@@ -216,7 +216,7 @@ class AuthInfo(object):
             return
         if sum(['project' in self.auth['scope'],
                 'domain' in self.auth['scope'],
-                'unscoped' in self.auth['scope']) != 1:
+                'unscoped' in self.auth['scope']]) != 1:
             raise exception.ValidationError(
                 attribute='project, domain or unscoped',
                 target='scope')
