@@ -356,10 +356,6 @@ class Manager(manager.Manager):
         return self.driver.get_domain_by_name(domain_name)
 
     def create_domain(self, domain_id, domain, initiator=None):
-        if (not self.identity_api.multiple_domains_supported and
-                domain_id != CONF.identity.admin_domain_id):
-            raise exception.Forbidden(_('Multiple domains are not supported'))
-#        self.assert_domain_not_federated(domain_id, domain)
         domain.setdefault('enabled', True)
         domain['enabled'] = clean.domain_enabled(domain['enabled'])
         ret = self.driver.create_domain(domain_id, domain)

@@ -400,6 +400,7 @@ class Manager(manager.Manager):
     def check_user_in_group(self, user_id, group_id):
         return self.driver.check_user_in_group(user_id, group_id)
 
+
 @six.add_metaclass(abc.ABCMeta)
 class Driver(object):
     """Interface description for an Identity driver."""
