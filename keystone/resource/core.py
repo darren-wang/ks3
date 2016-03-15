@@ -415,9 +415,6 @@ class Manager(manager.Manager):
                          'please disable it first.'))
 
         self._delete_domain_contents(domain_id)
-        # Delete any database stored domain config
-        self.domain_config_api.delete_config_options(domain_id)
-        self.domain_config_api.delete_config_options(domain_id, sensitive=True)
         # TODO(henry-nash): Although the controller will ensure deletion of
         # all users & groups within the domain (which will cause all
         # assignments for those users/groups to also be deleted), there
