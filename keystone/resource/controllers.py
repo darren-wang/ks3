@@ -105,6 +105,8 @@ class Domain(controller.Controller):
 
     @controller.protected()
     def get_domain(self, context, domain_id):
+	LOG.debug("\n####CONTEXT HERE####\n")
+	LOG.debug(context)
         ref = self.resource_api.get_domain(domain_id)
         return Domain.wrap_member(context, ref)
 
