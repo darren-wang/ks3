@@ -36,8 +36,9 @@ CONF = cfg.CONF
 
 
 def _build_policy_check_credentials(self, action, context, kwargs):
-    LOG.debug('RBAC: Authorizing %(action)s(%(kwargs)s)', {
-        'action': action,
+    LOG.debug('RBAC: Authorizing %(service)s:%(perm)s(%(kwargs)s)', {
+        'service': action[0],
+        'perm': action[1],
         'kwargs': ', '.join(['%s=%s' % (k, kwargs[k]) for k in kwargs])})
 
     # see if auth context has already been created. If so use it.
@@ -91,7 +92,7 @@ def protected(callback=None):
                              'input_attr': kwargs}
                 callback(self, context, prep_info, *args, **kwargs)
             else:
-                action = 'identity:%s' % f.__name__
+                action = ('keystone', f.__name__)
                 creds = _build_policy_check_credentials(self, action,
                                                         context, kwargs)
                 
@@ -142,16 +143,13 @@ def protected(callback=None):
                         subParams['url.'+k] = kwargs[k]
                 target.update(subParams)
                 target = utils.flatten_dict(target)
-                
-                # Isolation check
-#                LOG.debug('Isolation check.')
-#                self.policy_api.enforce(action, target, creds,
-#                                        check_type='isolation')
 
-                # tenant domain's RBAC policy is loaded from DB
-#                LOG.debug('Target domain is a tenant domain.')
+#                LOG.debug('Evaluating against System Authz Policies')
+#                self.policy_api.enforce(action, target, creds)
+
+#                LOG.debug('Evaluating against Domain Authz Policies')
 #                self.policy_api.enforce(action, target, creds,
-#                                        check_type=user_domain_id)
+#                                        check_type='domain')
             LOG.debug('\n#### CREDS HERE ####\n')
             LOG.debug(creds)
             LOG.debug('\n#### TARGET HERE ####\n')
@@ -169,7 +167,7 @@ def filterprotected(*filters):
             if 'is_admin' in context and context['is_admin']:
                 LOG.warning(_LW('RBAC: Bypassing authorization'))
             else:
-                action = 'identity:%s' % f.__name__
+                action = ('keystone', f.__name__)
                 creds = _build_policy_check_credentials(self,
                                                         action,
                                                         context, kwargs)
@@ -197,14 +195,13 @@ def filterprotected(*filters):
                     target['url.'+key] = kwargs[key]
                 target = utils.flatten_dict(target)
 
-                # Isolation check
-#                LOG.debug('Isolation check.')
-#                self.policy_api.enforce(action, target, creds,
-#                                        check_type='isolation')
+#                LOG.debug('Evaluating against System Authz Policies')
+#                self.policy_api.enforce(action, target, creds)
 
-#                LOG.debug('Target domain is a tenant domain.')
+#                LOG.debug('Evaluating against Domain Authz Policies')
 #                self.policy_api.enforce(action, target, creds,
-#                                        check_type=user_domain_id)
+#                                        check_type='domain')
+
             LOG.debug('\n#### CREDS HERE ####\n')
             LOG.debug(creds)
             LOG.debug('\n#### TARGET HERE ####\n')
@@ -609,11 +606,11 @@ class Controller(wsgi.Application):
         additional entities or attributes (passed in target_attr), so that
         they can be referenced by policy rules.
 
-         """
+        """
         if 'is_admin' in context and context['is_admin']:
             LOG.warning(_LW('RBAC: Bypassing authorization'))
         else:
-            action = 'identity:%s' % prep_info['f_name']
+            action = ('keystone', prep_info['f_name'])
             # TODO(henry-nash) need to log the target attributes as well
             creds = _build_policy_check_credentials(self, action,
                                                     context,
