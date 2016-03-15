@@ -106,7 +106,7 @@ def protected(callback=None):
                     key = '%s_id' % self.member_name
                     if key in kwargs:
                         ref = self.get_member_from_driver(kwargs[key])
-                        target['target'] = {self.member_name: ref}
+                        target['obj'] = {self.member_name: ref}
 
                 # TODO(henry-nash): Move this entire code to a member
                 # method inside v3 Auth
@@ -115,26 +115,25 @@ def protected(callback=None):
                         token_id=context['subject_token_id'],
                         token_data=self.token_provider_api.validate_token(
                             context['subject_token_id']))
-                    target.setdefault('target', {})
-                    target['target'].setdefault(self.member_name, {})
-                    target['target'][self.member_name]['user_id'] = (
+                    target.setdefault('obj', {})
+                    target['obj'].setdefault(self.member_name, {})
+                    target['obj'][self.member_name]['user_id'] = (
                         ks_token.user_id)
                     try:
                         user_domain_id = ks_token.user_domain_id
                     except exception.UnexpectedError:
                         user_domain_id = None
                     if user_domain_id:
-                        target['target'][self.member_name].setdefault(
+                        target['obj'][self.member_name].setdefault(
                             'user', {})
-                        target['target'][self.member_name][
+                        target['obj'][self.member_name][
                             'user'].setdefault('domain', {})
-                        target['target'][self.member_name]['user'][
+                        target['obj'][self.member_name]['user'][
                             'domain']['id'] = (user_domain_id)
 
                 # Add in the kwargs, which means reqBody in create and 
                 # update operations.
-                LOG.debug('\n#### KWARGS HERE ####\n')
-                LOG.debug(kwargs)
+
                 subParams = {}
                 for k in kwargs.iterkeys():
                     if isinstance(kwargs[k], dict):
