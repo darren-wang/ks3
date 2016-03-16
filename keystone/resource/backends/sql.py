@@ -159,7 +159,7 @@ class Resource(keystone_resource.Driver):
             for attr in Project.attributes:
                 if attr != 'id':
                     setattr(project_ref, attr, getattr(new_project, attr))
-            ref.extra = new_project.extra
+            project_ref.extra = new_project.extra
             return project_ref.to_dict()
 
     @sql.handle_conflicts(conflict_type='project')
