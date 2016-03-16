@@ -397,6 +397,8 @@ FILE_OPTIONS = {
         cfg.IntOpt('list_limit',
                    help='Maximum number of entities that will be returned '
                         'in a policy collection.'),
+        cfg.IntOpt('policy_limit',
+                   help='Maximum number of policies that a domain can have.')
     ],
     'auth': [
         cfg.ListOpt('methods', default=_DEFAULT_AUTH_METHODS,

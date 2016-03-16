@@ -159,8 +159,8 @@ class Resource(keystone_resource.Driver):
             for attr in Project.attributes:
                 if attr != 'id':
                     setattr(project_ref, attr, getattr(new_project, attr))
-            project_ref.extra = new_project.extra
-            return project_ref.to_dict(include_extra_dict=True)
+            ref.extra = new_project.extra
+            return project_ref.to_dict()
 
     @sql.handle_conflicts(conflict_type='project')
     def delete_project(self, project_id):
@@ -235,7 +235,7 @@ class Resource(keystone_resource.Driver):
 
 class Domain(sql.ModelBase, sql.DictBase):
     __tablename__ = 'domain'
-    attributes = ['id', 'name', 'enabled', 'description']
+    attributes = ['id', 'name', 'enabled', 'description', 'extra']
     id = sql.Column(sql.String(64), primary_key=True)
     name = sql.Column(sql.String(64), nullable=False)
     enabled = sql.Column(sql.Boolean, default=True, nullable=False)
@@ -247,7 +247,7 @@ class Domain(sql.ModelBase, sql.DictBase):
 class Project(sql.ModelBase, sql.DictBase):
     __tablename__ = 'project'
     attributes = ['id', 'name', 'domain_id', 'description', 'enabled',
-                  'parent_id']
+                  'parent_id', 'extra']
     id = sql.Column(sql.String(64), primary_key=True)
     name = sql.Column(sql.String(64), nullable=False)
     domain_id = sql.Column(sql.String(64), sql.ForeignKey('domain.id'),
@@ -255,6 +255,7 @@ class Project(sql.ModelBase, sql.DictBase):
     description = sql.Column(sql.Text())
     enabled = sql.Column(sql.Boolean)
     parent_id = sql.Column(sql.String(64), sql.ForeignKey('project.id'))
+    extra = sql.Column(sql.JsonBlob())
     # Unique constraint across two columns to create the separation
     # rather than just only 'name' being unique
     __table_args__ = (sql.UniqueConstraint('domain_id', 'name'), {})
