@@ -43,7 +43,7 @@ _rule_properties = {
     'service': {
         'type': 'string'
     },
-    'operation': {
+    'permission': {
         'type': 'string'
     },
     'condition': {
@@ -54,7 +54,7 @@ _rule_properties = {
 rule_create = {
     'type': 'object',
     'properties': _rule_properties,
-    'required': ['policy_id', 'service', 'operation', 'condition'],
+    'required': ['policy_id', 'service', 'permission', 'condition'],
     'additionalProperties': False
 }
 

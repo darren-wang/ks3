@@ -51,7 +51,7 @@ class Policy(controller.Controller):
         for p in rule_set: # for each service
             d = {'policy_id':policy_id, 'service': p['service']}
             for rule in p['rules'].iteritems():
-                d['operation'] = rule[0]
+                d['permission'] = rule[0]
                 d['condition'] = rule[1]
                 rule_ref = self._assign_unique_id(self._normalize_dict(d))
                 self.rule_api.create_rule(rule_ref['id'], rule_ref,
@@ -92,7 +92,7 @@ class Policy(controller.Controller):
         for p in rule_set: # for each service
             d = {'policy_id':policy_id, 'service': p['service']}
             for rule in p['rules'].iteritems():
-                d['operation'] = rule[0]
+                d['permission'] = rule[0]
                 d['condition'] = rule[1]
                 self.rule_api.update_rule(d, initiator)
         return Policy.wrap_member(context, ref)
@@ -117,9 +117,9 @@ class Rule(controller.Controller):
     def create_rule(self, context, rule):
         if not context['query_string']:
             context['query_string'] = {}
-        context['query_string'].update({'domain_id':domain_id,
-                                        'service':service,
-                                        'operation':operation})
+        context['query_string'].update({'domain_id': domain_id,
+                                        'service': service,
+                                        'permission': permission})
         filters = ['domain_id']
         hints = Policy.build_driver_hints(context, filters)
         refs = self.policy_api.list_policies(hints=hints)
@@ -128,13 +128,13 @@ class Rule(controller.Controller):
             raise exception.ForbiddenAction("Rule creation forbidden:" 
                         " no policy has been created for this domain.")
 
-        filters.extend(['service', 'operation'])
+        filters.extend(['service', 'permission'])
         hints = Rule.build_driver_hints(context, filters)
         refs = self.rule_api.list_rules(hints=hints)
         # assert same rule not created 
         if refs:
             raise exception.ForbiddenAction("Rule creation forbidden:"
-                                " rule on the same service and operation"
+                                " rule on the same service and permission"
                                    " in this domain has been created.")
         # create the rule
         ref = self._assign_unique_id(self._normalize_dict(rule))
@@ -157,7 +157,7 @@ class Rule(controller.Controller):
         return Rule.wrap_member(context, ref)
 
     @controller.filterprotected('domain_id', 'policy_id','service',
-                                'operation')
+                                'permission')
     def list_rules(self, context, filters):
         hints = Rule.build_driver_hints(context, filters)
         refs = self.rule_api.list_rules(hints=hints)
