@@ -8,7 +8,7 @@ _identity_name = {
     'minLength': 1
 }
 
-_user_properties = {
+_user_create_properties = {
     'description': validation.nullable(parameter_types.description),
     'domain_id': parameter_types.id_string,
     'enabled': parameter_types.boolean,
@@ -18,36 +18,50 @@ _user_properties = {
     }
 }
 
+_user_update_properties = {
+    'description': validation.nullable(parameter_types.description),
+    'enabled': parameter_types.boolean,
+    'name': _identity_name,
+    'password': {
+        'type': ['string', 'null']
+    }
+}
+
 user_create = {
     'type': 'object',
-    'properties': _user_properties,
+    'properties': _user_create_properties,
     'required': ['name', 'domain_id'],
     'additionalProperties': True
 }
 
 user_update = {
     'type': 'object',
-    'properties': _user_properties,
+    'properties': _user_update_properties,
     'minProperties': 1,
     'additionalProperties': True
 }
 
-_group_properties = {
+_group_create_properties = {
     'description': validation.nullable(parameter_types.description),
     'domain_id': parameter_types.id_string,
     'name': _identity_name
 }
 
+_group_update_properties = {
+    'description': validation.nullable(parameter_types.description),
+    'name': _identity_name
+}
+
 group_create = {
     'type': 'object',
-    'properties': _group_properties,
+    'properties': _group_create_properties,
     'required': ['name', 'domain_id'],
     'additionalProperties': True
 }
 
 group_update = {
     'type': 'object',
-    'properties': _group_properties,
+    'properties': _group_update_properties,
     'minProperties': 1,
     'additionalProperties': True
 }

@@ -14,7 +14,7 @@ from keystone.common import validation
 from keystone.common.validation import parameter_types
 
 
-_project_properties = {
+_project_create_properties = {
     'description': validation.nullable(parameter_types.description),
     # NOTE(lbragstad): domain_id isn't nullable according to some backends.
     # The identity-api should be updated to be consistent with the
@@ -29,9 +29,20 @@ _project_properties = {
     }
 }
 
+_project_update_properties = {
+    'description': validation.nullable(parameter_types.description),
+    'enabled': parameter_types.boolean,
+    'parent_id': validation.nullable(parameter_types.id_string),
+    'name': {
+        'type': 'string',
+        'minLength': 1,
+        'maxLength': 64
+    }
+}
+
 project_create = {
     'type': 'object',
-    'properties': _project_properties,
+    'properties': _project_create_properties,
     # NOTE(lbragstad): A project name is the only parameter required for
     # project creation according to the Identity V3 API. We should think
     # about using the maxProperties validator here, and in update.
@@ -41,7 +52,7 @@ project_create = {
 
 project_update = {
     'type': 'object',
-    'properties': _project_properties,
+    'properties': _project_update_properties,
     # NOTE(lbragstad) Make sure at least one property is being updated
     'minProperties': 1,
     'additionalProperties': True

@@ -14,22 +14,27 @@ from keystone.common import validation
 from keystone.common.validation import parameter_types
 
 
-_role_properties = {
+_role_create_properties = {
     'description': validation.nullable(parameter_types.description),
     'domain_id': parameter_types.id_string,
     'name': parameter_types.name
 }
 
+_role_update_properties = {
+    'description': validation.nullable(parameter_types.description),
+    'name': parameter_types.name
+}
+
 role_create = {
     'type': 'object',
-    'properties': _role_properties,
+    'properties': _role_create_properties,
     'required': ['name', 'domain_id'],
     'additionalProperties': True
 }
 
 role_update = {
     'type': 'object',
-    'properties': _role_properties,
+    'properties': _role_update_properties,
     'minProperties': 1,
     'additionalProperties': True
 }
