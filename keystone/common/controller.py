@@ -150,10 +150,10 @@ def protected(callback=None):
 #                LOG.debug('Evaluating against Domain Authz Policies')
 #                self.policy_api.enforce(action, target, creds,
 #                                        check_type='domain')
-            LOG.debug('\n#### CREDS HERE ####\n')
-            LOG.debug(creds)
-            LOG.debug('\n#### TARGET HERE ####\n')
-            LOG.debug(target)
+                LOG.debug('\n#### CREDS HERE ####\n')
+                LOG.debug(creds)
+                LOG.debug('\n#### TARGET HERE ####\n')
+                LOG.debug(target)
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
@@ -202,10 +202,10 @@ def filterprotected(*filters):
 #                self.policy_api.enforce(action, target, creds,
 #                                        check_type='domain')
 
-            LOG.debug('\n#### CREDS HERE ####\n')
-            LOG.debug(creds)
-            LOG.debug('\n#### TARGET HERE ####\n')
-            LOG.debug(target)
+                LOG.debug('\n#### CREDS HERE ####\n')
+                LOG.debug(creds)
+                LOG.debug('\n#### TARGET HERE ####\n')
+                LOG.debug(target)
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected
