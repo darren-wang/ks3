@@ -40,10 +40,10 @@ def init():
         _ENFORCER = common_policy.Enforcer(CONF)
 
 
-def enforce(action, target, credentials, check_type=None, do_raise=True):
+def enforce(action, target, creds, check_type=None, do_raise=True):
     """Verifies that the action is valid on the target in this context.
 
-       :param credentials: user credentials
+       :param creds: user credentials
        :param action: string representing the action to be checked, which
                       should be colon separated for clarity.
                       Or it can be a Check instance.
@@ -69,7 +69,7 @@ def enforce(action, target, credentials, check_type=None, do_raise=True):
         extra.update(exc=exception.ForbiddenAction, action=action,
                      do_raise=do_raise)
 
-    return _ENFORCER.enforce(action, target, credentials,
+    return _ENFORCER.enforce(action, target, creds,
                              domain=check_type, **extra)
 
 
