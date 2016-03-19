@@ -90,7 +90,7 @@ class Policy(rules.Policy):
 
     def list_policies_in_domain(self, domain_id):
         with sql.transaction() as session:
-            query = session.query(Policy)
+            query = session.query(PolicyModel)
             policy_refs = query.filter_by(domain_id=domain_id)
             return [policy_ref.to_dict() for policy_ref in policy_refs]
 
