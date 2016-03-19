@@ -20,7 +20,7 @@ _policy_create_properties = {
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
     'rules': {
-        'type': 'string'
+        'type': 'object'
     }
 }
 
@@ -29,7 +29,7 @@ _policy_update_properties = {
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
     'rules': {
-        'type': 'string'
+        'type': 'object'
     }
 }
 
