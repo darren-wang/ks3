@@ -62,11 +62,11 @@ class Policy(controller.Controller):
         policy_id = ref['id']
         for serv in rules.iterkeys(): # for each service
             for item in rules[serv].iteritems():
-                ref = { 'policy_id': policy_id,
+                rule = {'policy_id': policy_id,
                         'service': serv,
                         'permission': item[0],
-                        'condition': item[1] }
-                rule_ref = self._assign_unique_id(self._normalize_dict(ref))
+                        'condition': item[1]}
+                rule_ref = self._assign_unique_id(self._normalize_dict(rule))
                 self.rule_api.create_rule(rule_ref['id'], rule_ref,
                                           initiator)
 
