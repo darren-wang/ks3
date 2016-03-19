@@ -19,8 +19,6 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
 
     policy_table = sql.Table('policy', meta, autoload=True)
-    rule_table = sql.Table('rule', meta, autoload=True)
     extra = sql.Column('extra', ks_sql.JsonBlob.impl)
     
     policy_table.create_column(extra)
-    rule_table.create_column(extra)
