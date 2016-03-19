@@ -19,7 +19,7 @@ _policy_create_properties = {
     'name': parameter_types.name,
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
-    'rule_set': {
+    'rules': {
         'type': 'string'
     }
 }
@@ -28,7 +28,7 @@ _policy_update_properties = {
     'name': parameter_types.name,
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
-    'rule_set': {
+    'rules': {
         'type': 'string'
     }
 }
@@ -36,7 +36,7 @@ _policy_update_properties = {
 policy_create = {
     'type': 'object',
     'properties': _policy_create_properties,
-    'required': ['domain_id', 'name', 'rule_set'],
+    'required': ['domain_id', 'name', 'rules'],
     'additionalProperties': True
 }
 
