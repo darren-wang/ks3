@@ -174,7 +174,7 @@ class GrantAssignment(controller.Controller):
 
         self.check_protection(context, protection, ref)
 
-    @controller.protected(callback=_check_grant_protection)
+#    @controller.protected(callback=_check_grant_protection)
     def create_grant(self, context, role_id, user_id=None,
                      group_id=None, domain_id=None, project_id=None):
         """Grants a role to a user or group on either a domain or project."""
