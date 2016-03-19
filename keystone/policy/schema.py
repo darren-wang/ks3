@@ -48,6 +48,7 @@ policy_update = {
 }
 
 _rule_create_properties = {
+    'domain_id': parameter_types.id_string,
     'policy_id': parameter_types.id_string,
     'service': {
         'type': 'string'
@@ -75,7 +76,8 @@ _rule_update_properties = {
 rule_create = {
     'type': 'object',
     'properties': _rule_create_properties,
-    'required': ['policy_id', 'service', 'permission', 'condition'],
+    'required': ['domain_id', 'policy_id', 'service',
+                 'permission', 'condition'],
     'additionalProperties': False
 }
 

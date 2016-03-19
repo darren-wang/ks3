@@ -77,9 +77,22 @@ class PolicyManager(manager.Manager):
         notifications.Audit.deleted(self._POLICY, policy_id, initiator)
         return ret
     
-    def enabled_policies_in_domain(self, domain_id):
+    def get_enabled_policy_in_domain(self, domain_id):
+        policies_ref = self.list_policies_in_domain(domain_id)
+        for policy_ref in policies_ref:
+            if policy_ref['enabled']:
+                return policy_ref
+
+    def list_policies_in_domain(self, domain_id):
         self.resource_api.get_domain(domain_id)
-        return self.driver.enabled_policies_in_domain(domain_id)
+        return self.driver.list_policies_in_domain(domain_id)
+         
+    def check_policy_in_domain(self, policy_id, domain_id):
+        policies_ref = self.list_policies_in_domain(domain_id)
+        if policies_ref:
+            policies_id = [ p['id'] for p in policies_ref ]
+            return policy_id in policies_id
+        return False
 
 
 @dependency.provider('rule_api')

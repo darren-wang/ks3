@@ -12,15 +12,18 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from oslo_config import cfg
+from oslo_log import log
+
 from keystone.common import controller
 from keystone.common import dependency
 from keystone.common import validation
 from keystone import exception
 from keystone import notifications
 from keystone.policy import schema
-from oslo_log import log
 
 
+CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
 
@@ -36,11 +39,20 @@ class Policy(controller.Controller):
     @controller.protected()
     @validation.validated(schema.policy_create, 'policy')
     def create_policy(self, context, policy):
-        if self.policy_api.domain_has_policy(policy['domain_id']):
-            raise exception.ForbiddenAction("Policy Creation Forbidden: " 
-                                            "Policy has been created.")
+        domain_id = policy['domain_id']
+        count = len(self.policy_api.list_policies_in_domain(domain_id))
+        if count >= CONF.policy.policy_limit:
+            raise exception.ForbiddenAction('Policy Creation Forbidden: '
+                                'number of created policy exceeds limit.')
 
-        rule_set = policy.pop('rule_set') # rule_set is a list
+        if policy['enabled']:
+            policy_ref = self.policy_api.get_enabled_policy_in_domain(
+                                                                    domain_id)
+            if policy_ref:
+                raise exception.ForbiddenAction('Policy Creation Forbidden: '
+                                    'number of enabled policy exceeds limit.')
+        
+        rules = policy.pop('rules') # rules is a dict
         
         ref = self._assign_unique_id(self._normalize_dict(policy))
         initiator = notifications._get_request_audit_info(context)
@@ -48,12 +60,13 @@ class Policy(controller.Controller):
 
         # create each rule in this policy
         policy_id = ref['id']
-        for p in rule_set: # for each service
-            d = {'policy_id':policy_id, 'service': p['service']}
-            for rule in p['rules'].iteritems():
-                d['permission'] = rule[0]
-                d['condition'] = rule[1]
-                rule_ref = self._assign_unique_id(self._normalize_dict(d))
+        for serv in rules.iterkeys(): # for each service
+            for item in rules[serv].iteritems():
+                ref = { 'policy_id': policy_id,
+                        'service': serv,
+                        'permission': item[0],
+                        'condition': item[1] }
+                rule_ref = self._assign_unique_id(self._normalize_dict(ref))
                 self.rule_api.create_rule(rule_ref['id'], rule_ref,
                                           initiator)
 
@@ -115,28 +128,15 @@ class Rule(controller.Controller):
     @controller.protected()
     @validation.validated(schema.rule_create, 'rule')
     def create_rule(self, context, rule):
-        if not context['query_string']:
-            context['query_string'] = {}
-        context['query_string'].update({'domain_id': domain_id,
-                                        'service': service,
-                                        'permission': permission})
-        filters = ['domain_id']
-        hints = Policy.build_driver_hints(context, filters)
-        refs = self.policy_api.list_policies(hints=hints)
-        # assert policy created
-        if not refs:
-            raise exception.ForbiddenAction("Rule creation forbidden:" 
-                        " no policy has been created for this domain.")
-
-        filters.extend(['service', 'permission'])
-        hints = Rule.build_driver_hints(context, filters)
-        refs = self.rule_api.list_rules(hints=hints)
-        # assert same rule not created 
-        if refs:
-            raise exception.ForbiddenAction("Rule creation forbidden:"
-                                " rule on the same service and permission"
-                                   " in this domain has been created.")
+        # check ref policy created and in ref domain
+        
+        policy_id = rule['policy_id']
+        domain_id = rule['domain_id']
+        if not self.policy_api.check_policy_in_domain(policy_id, domain_id):
+            raise exception.ForbiddenAction('Rule Creation Forbidden: '
+                                        'no such policy in target domain.')
         # create the rule
+        rule.pop('domain_id')
         ref = self._assign_unique_id(self._normalize_dict(rule))
         initiator = notifications._get_request_audit_info(context)
         ref = self.rule_api.create_rule(ref['id'], ref, initiator)
