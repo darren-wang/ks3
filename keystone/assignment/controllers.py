@@ -556,9 +556,9 @@ class RoleAssignment(controller.Controller):
             msg = _('Specify a user or group, not both')
             raise exception.ValidationError(msg)
 
-#    @controller.filterprotected('group.id', 'role.id',
-#                                'scope.domain.id', 'scope.project.id',
-#                                'scope.OS-INHERIT:inherited_to', 'user.id')
+    @controller.filterprotected('group.id', 'role.id',
+                                'scope.domain.id', 'scope.project.id',
+                                'scope.OS-INHERIT:inherited_to', 'user.id')
     def list_role_assignments(self, context, filters):
 
         # TODO(henry-nash): This implementation uses the standard filtering
