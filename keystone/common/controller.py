@@ -581,7 +581,7 @@ class Controller(wsgi.Application):
         elif token_ref.project_scoped:
             return token_ref.project_domain_id
         else:
-            raise  exception.ValidationError('Wrong token scope: not'
+            raise exception.ValidationError('Wrong token scope: not'
                     ' domain-scoped nor project-scoped.')
 
 

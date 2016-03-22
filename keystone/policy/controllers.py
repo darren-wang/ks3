@@ -45,7 +45,7 @@ class Policy(controller.Controller):
             raise exception.ForbiddenAction('Policy Creation Forbidden: '
                                 'number of created policy exceeds limit.')
 
-        if policy['enabled']:
+        if policy.has_key('enabled') and policy['enabled']:
             policy_ref = self.policy_api.get_enabled_policy_in_domain(
                                                                     domain_id)
             if policy_ref:
@@ -82,10 +82,6 @@ class Policy(controller.Controller):
     def get_policy(self, context, policy_id): 
         policy_ref = self.policy_api.get_policy(policy_id)
         rules_ref = self.rule_api.list_rules_in_policy(policy_id)
-        if rules_ref:
-            for rule_ref in rules_ref:
-                rule_ref.pop('policy_id')
-
         policy_ref['rules']=rules_ref
         return Policy.wrap_member(context, policy_ref)
 
@@ -95,24 +91,57 @@ class Policy(controller.Controller):
         self._require_matching_id(policy_id, policy)
         self._require_matching_domain_id(
             policy_id, policy, self.policy_api.get_policy)
-        
-        rule_set = policy.pop('rule_set')
-        
         initiator = notifications._get_request_audit_info(context)
-        ref = self.policy_api.update_policy(policy_id, policy, initiator)
-        
-        for p in rule_set: # for each service
-            d = {'policy_id':policy_id, 'service': p['service']}
-            for rule in p['rules'].iteritems():
-                d['permission'] = rule[0]
-                d['condition'] = rule[1]
-                self.rule_api.update_rule(d, initiator)
-        return Policy.wrap_member(context, ref)
+ 
+        if policy.has_key('enabled') and policy['enabled']:
+            domain_id = self._get_domain_id_from_token(context)
+            policy_ref = self.policy_api.get_enabled_policy_in_domain(
+                                                                    domain_id)
+            if policy_ref and (policy_ref['id'] != policy_id):
+                raise exception.ForbiddenAction('Policy Update Forbidden: '
+                                    'number of enabled policy exceeds limit.')
+
+        if policy.has_key('rules'):
+            rules = policy.pop('rules')
+        else:
+            rules = {}
+
+        policy_ref = self.policy_api.update_policy(policy_id, policy,
+                                                initiator)
+        if rules:
+            filters = ['policy_id', 'service', 'permission']
+            context['query_string'] = {}
+            policy_ref['rules_updated'] = []
+
+            for serv in rules.iterkeys(): 
+                for item in rules[serv].iteritems():
+                    rule = {'policy_id':policy_id,
+                            'service': serv,
+                            'permission': item[0]}
+                    context['query_string'].update(rule)
+                    hints = Rule.build_driver_hints(context, filters)
+                    rule.update({'condition':item[1]})
+                    ref = self.rule_api.list_rules(hints=hints)
+                    LOG.debug('\nRULE REF FOR UPDATE IS HERE')
+                    if ref: # rule exists already
+                        rule_ref = self.rule_api.update_rule(ref[0]['id'],
+                                                            rule, initiator)
+                    else:
+                        r = (self._assign_unique_id(
+                                            self._normalize_dict(rule)))
+                        rule_ref = self.rule_api.create_rule(r['id'], r,
+                                                        initiator)
+                    policy_ref['rules_updated'].append(rule_ref)
+        return Policy.wrap_member(context, policy_ref)
 
     @controller.protected()
     def delete_policy(self, context, policy_id):
         initiator = notifications._get_request_audit_info(context)
-        self.rule_api.delelte_rules(policy_id)
+        
+        rules_ref = self.rule_api.list_rules_in_policy(policy_id)
+        if rules_ref:
+            for rule_ref in rules_ref:
+                self.rule_api.delete_rule(rule_ref['id'], initiator)
         return self.policy_api.delete_policy(policy_id, initiator)
 
 @dependency.requires('rule_api', 'policy_api')

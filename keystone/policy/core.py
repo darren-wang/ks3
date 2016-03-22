@@ -110,6 +110,8 @@ class RuleManager(manager.Manager):
         return ref
     
     def update_rule(self, rule_id, rule, initiator=None):
+        LOG.debug('\nRULE IS LIKE THIS\n')
+        LOG.debug(rule)
         if 'id' in rule and rule_id != rule['id']:
             raise exception.ValidationError('Cannot change rule ID')
         try:
@@ -128,9 +130,6 @@ class RuleManager(manager.Manager):
 
     def list_rules(self, hints=None):
         rules = self.driver.list_rules(hints or driver_hints.Hints())
-        if not rules:
-            rules = [{'type':'default_rule', 
-                      'condition': 'role:admin'}]
         return rules
 
     def list_rules_in_policy(self, policy_id):
