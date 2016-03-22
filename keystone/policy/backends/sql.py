@@ -124,6 +124,12 @@ class Rule(policy.RuleDriver):
             rule_refs = sql.filter_limit_query(RuleModel, query, hints)
             return [rule_ref.to_dict() for rule_ref in rule_refs]
 
+    def list_rules_in_policy(self, policy_id):
+        with sql.transaction() as session:
+            query = session.query(RuleModel)
+            rule_refs = query.filter_by(policy_id=policy_id)
+            return [rule_ref.to_dict() for rule_ref in rule_refs]
+
     @sql.handle_conflicts(conflict_type='rule')
     def update_rule(self, rule_id, rule):
         with sql.transaction() as session:

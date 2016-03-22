@@ -79,16 +79,15 @@ class Policy(controller.Controller):
         return Policy.wrap_collection(context, refs, hints=hints)
 
     @controller.protected()
-    def get_policy(self, context, policy_id): # No query string
-        ref = self.policy_api.get_policy(policy_id)
-        if not context['query_string']:
-            context['query_string'] = {}
-        context['query_string'].update({'policy_id':policy_id})
-        hints = Rule.build_driver_hints(context, ['policy_id'])
-        refs = self.rule_api.list_rules(hints=hints)
-        ref.update({'rule_set':{}})
-        ref['rule_set'].update(refs)
-        return Policy.wrap_member(context, ref)
+    def get_policy(self, context, policy_id): 
+        policy_ref = self.policy_api.get_policy(policy_id)
+        rules_ref = self.rule_api.list_rules_in_policy(policy_id)
+        if rules_ref:
+            for rule_ref in rules_ref:
+                rule_ref.pop('policy_id')
+
+        policy_ref['rules']=rules_ref
+        return Policy.wrap_member(context, policy_ref)
 
     @controller.protected()
     @validation.validated(schema.policy_update, 'policy')

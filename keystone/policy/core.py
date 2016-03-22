@@ -97,7 +97,7 @@ class PolicyManager(manager.Manager):
 
 
 @dependency.provider('rule_api')
-@dependency.requires('resource_api')
+@dependency.requires('resource_api', 'policy_api')
 class RuleManager(manager.Manager):
     _RULE = 'rule'
     
@@ -114,6 +114,7 @@ class RuleManager(manager.Manager):
             raise exception.ValidationError('Cannot change rule ID')
         try:
             ref = self.driver.update_rule(rule_id, rule)
+
         except exception.NotFound:
             raise exception.RuleNotFound(rule_id=rule_id)
         notifications.Audit.updated(self._RULE, rule_id, initiator)
@@ -131,7 +132,11 @@ class RuleManager(manager.Manager):
             rules = [{'type':'default_rule', 
                       'condition': 'role:admin'}]
         return rules
-    
+
+    def list_rules_in_policy(self, policy_id):
+        self.policy_api.get_policy(policy_id)
+        return self.driver.list_rules_in_policy(policy_id)
+
     def delete_rule(self, rule_id, initiator):
         try:
             ret = self.driver.delete_rule(rule_id)
