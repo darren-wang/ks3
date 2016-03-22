@@ -619,7 +619,7 @@ class Controller(wsgi.Application):
             # attributes provided.
             policy_dict = {}
             if target_attr:
-                policy_dict = {'target': target_attr}
+                policy_dict = {'obj': target_attr}
             policy_dict.update(prep_info['input_attr'])
             self.policy_api.enforce(action,
                                     utils.flatten_dict(policy_dict),
