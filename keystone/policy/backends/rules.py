@@ -66,8 +66,8 @@ def enforce(action, target, creds, check_type=None, do_raise=True):
     # Add the exception arguments if asked to do a raise
     extra = {}
     if do_raise:
-        extra.update(exc=exception.ForbiddenAction, action=action,
-                     do_raise=do_raise)
+        extra.update(exc=exception.ForbiddenAction, service=action[0],
+                     permission=action[1], do_raise=do_raise)
 
     return _ENFORCER.enforce(action, target, creds,
                              domain=check_type, **extra)
@@ -76,9 +76,11 @@ def enforce(action, target, creds, check_type=None, do_raise=True):
 class Policy(policy.PolicyDriver):
 
     def enforce(self, action, target, creds, check_type=None):
-        LOG.debug('API protection:%(creds)s \nACT\n\t'
-        'ON\n\t target: %(target)s\n', {
-        'creds': creds,'target':target})
+        LOG.debug('API protection:\nsub:%(creds)s \nACT\n'
+        'service:%(serv)s permission:%(perm)s\nON\n'
+        'target: %(target)s\n', {
+            'serv': action[0], 'perm': action[1], 'creds': creds,
+            'target':target})
         enforce(action, target, creds, check_type=check_type)
 
     def create_policy(self, policy_id, policy):

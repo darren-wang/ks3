@@ -203,7 +203,8 @@ class Forbidden(SecurityError):
 
 class ForbiddenAction(Forbidden):
     message_format = _("You are not authorized to perform the"
-                       " requested action: %(action)s")
+                       " requested action: %(permission)s on service:"
+                       " %(service)s")
 
 
 class ImmutableAttributeError(Forbidden):
@@ -442,18 +443,3 @@ class UnsupportedTokenVersionException(Exception):
     """Token version is unrecognizable or unsupported."""
     pass
 
-
-class SAMLSigningError(UnexpectedError):
-    debug_message_format = _('Unable to sign SAML assertion. It is likely '
-                             'that this server does not have xmlsec1 '
-                             'installed, or this is the result of '
-                             'misconfiguration. Reason %(reason)s')
-    title = 'Error signing SAML assertion'
-
-
-class OAuthHeadersMissingError(UnexpectedError):
-    debug_message_format = _('No Authorization headers found, cannot proceed '
-                             'with OAuth related calls, if running under '
-                             'HTTPd or Apache, ensure WSGIPassAuthorization '
-                             'is set to On.')
-    title = 'Error retrieving OAuth headers'

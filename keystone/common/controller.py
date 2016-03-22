@@ -36,8 +36,8 @@ CONF = cfg.CONF
 
 
 def _build_policy_check_credentials(self, action, context, kwargs):
-    LOG.debug('RBAC: Authorizing %(service)s:%(perm)s(%(kwargs)s)', {
-        'service': action[0],
+    LOG.debug('RBAC: Authorizing %(serv)s:%(perm)s(%(kwargs)s)', {
+        'serv': action[0],
         'perm': action[1],
         'kwargs': ', '.join(['%s=%s' % (k, kwargs[k]) for k in kwargs])})
 
@@ -144,12 +144,12 @@ def protected(callback=None):
                 target.update(subParams)
                 target = utils.flatten_dict(target)
 
-#                LOG.debug('Evaluating against System Authz Policies')
-#                self.policy_api.enforce(action, target, creds)
+                LOG.debug('Evaluating against System Authz Policies')
+                self.policy_api.enforce(action, target, creds)
 
-#                LOG.debug('Evaluating against Domain Authz Policies')
-#                self.policy_api.enforce(action, target, creds,
-#                                        check_type='domain')
+                LOG.debug('Evaluating against Domain Authz Policies')
+                self.policy_api.enforce(action, target, creds,
+                                        check_type='domain')
                 LOG.debug('\n#### CREDS HERE ####\n')
                 LOG.debug(creds)
                 LOG.debug('\n#### TARGET HERE ####\n')
@@ -195,12 +195,12 @@ def filterprotected(*filters):
                     target['url.'+key] = kwargs[key]
                 target = utils.flatten_dict(target)
 
-#                LOG.debug('Evaluating against System Authz Policies')
-#                self.policy_api.enforce(action, target, creds)
+                LOG.debug('Evaluating against System Authz Policies')
+                self.policy_api.enforce(action, target, creds)
 
-#                LOG.debug('Evaluating against Domain Authz Policies')
-#                self.policy_api.enforce(action, target, creds,
-#                                        check_type='domain')
+                LOG.debug('Evaluating against Domain Authz Policies')
+                self.policy_api.enforce(action, target, creds,
+                                        check_type='domain')
 
                 LOG.debug('\n#### CREDS HERE ####\n')
                 LOG.debug(creds)
@@ -569,7 +569,7 @@ class Controller(wsgi.Application):
         except KeyError:
             # This might happen if we use the Admin token, for instance
             raise exception.ValidationError(
-                _('A domain-scoped token must be used'))
+                _('A scoped token must be used'))
         except (exception.TokenNotFound,
                 exception.UnsupportedTokenVersionException):
             LOG.warning(_LW('Invalid token found while getting domain ID '
@@ -578,14 +578,12 @@ class Controller(wsgi.Application):
 
         if token_ref.domain_scoped:
             return token_ref.domain_id
+        elif token_ref.project_scoped:
+            return token_ref.project_domain_id
         else:
-            # TODO(henry-nash): We should issue an exception here since if
-            # a v3 call does not explicitly specify the domain_id in the
-            # entity, it should be using a domain scoped token.  However,
-            # the current tempest heat tests issue a v3 call without this.
-            # This is raised as bug #1283539.  Once this is fixed, we
-            # should remove the line below and replace it with an error.
-            return CONF.identity.admin_domain_id
+            raise  exception.ValidationError('Wrong token scope: not'
+                    ' domain-scoped nor project-scoped.')
+
 
     def _normalize_domain_id(self, context, ref):
         """Fill in domain_id if not specified in a v3 call."""
