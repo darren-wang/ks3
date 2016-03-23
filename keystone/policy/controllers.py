@@ -153,7 +153,7 @@ class Rule(controller.Controller):
         super(Rule, self).__init__()
         self.get_member_from_driver = self.rule_api.get_rule
 
-    def _check_rule_protection(self, context, protection, rule_id=None):
+    def _check_rule_protection(self, context, prep_info, rule_id=None):
         """Check protection for rule APIs.
 
         The policy rule might want to inspect attributes of both the rule
@@ -163,12 +163,13 @@ class Rule(controller.Controller):
         """
         ref = {}
         if rule_id:
-            rule_ref = self.rule_api.get_rule(rule_id)
-            if rule_ref:
-                policy_id = rule_ref['policy_id']
-            ref['policy'] = self.policy_api.get_policy(policy_id)
-
-        self.check_protection(context, protection, ref)
+            ref['rule'] = self.rule_api.get_rule(rule_id)
+            if ref['rule']:
+                policy_id = ref['rule']['policy_id']
+                ref['policy'] = self.policy_api.get_policy(policy_id)
+        LOG.debug('\nREF IS LIKE THIS')
+        LOG.debug(ref)
+        self.check_protection(context, prep_info, ref)
 
     @controller.protected()
     @validation.validated(schema.rule_create, 'rule')
