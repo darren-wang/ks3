@@ -195,11 +195,10 @@ def filterprotected(*filters):
                 target = utils.flatten_dict(target)
 
                 LOG.debug('Evaluating against System Authz Policies')
-                self.policy_api.enforce(action, target, creds)
+                self.policy_api.enforce(action, target, creds, 'system')
 
                 LOG.debug('Evaluating against Domain Authz Policies')
-                self.policy_api.enforce(action, target, creds,
-                                        check_type='domain')
+                self.policy_api.enforce(action, target, creds, 'domain')
 
                 LOG.debug('\n#### CREDS HERE ####\n')
                 LOG.debug(creds)

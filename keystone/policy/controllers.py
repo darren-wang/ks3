@@ -26,6 +26,15 @@ from keystone.policy import schema
 CONF = cfg.CONF
 LOG = log.getLogger(__name__)
 
+_RULE_FILTERS = ['policy_id', 'service', 'permission']
+
+def _build_rule_filter_dict(policy_id, service, permission):
+    filter_dict = {}
+    filter_dict.update({'policy_id': policy_id,
+                        'service': service,
+                        'permission': permission})
+    return filter_dict
+
 
 @dependency.requires('policy_api', 'rule_api')
 class Policy(controller.Controller):
@@ -109,21 +118,17 @@ class Policy(controller.Controller):
         policy_ref = self.policy_api.update_policy(policy_id, policy,
                                                 initiator)
         if rules:
-            filters = ['policy_id', 'service', 'permission']
             context['query_string'] = {}
             policy_ref['rules_updated'] = []
 
             for serv in rules.iterkeys(): 
                 for item in rules[serv].iteritems():
-                    rule = {'policy_id':policy_id,
-                            'service': serv,
-                            'permission': item[0]}
+                    rule = _build_rule_filter_dict(policy_id, serv, item[0])
                     context['query_string'].update(rule)
-                    hints = Rule.build_driver_hints(context, filters)
+                    hints = Rule.build_driver_hints(context, _RULE_FILTERS)
                     rule.update({'condition':item[1]})
                     ref = self.rule_api.list_rules(hints=hints)
-                    LOG.debug('\nRULE REF FOR UPDATE IS HERE')
-                    if ref: # rule exists already
+                    if ref: # Rule exists already, ref is a list type value
                         rule_ref = self.rule_api.update_rule(ref[0]['id'],
                                                             rule, initiator)
                     else:
@@ -137,7 +142,7 @@ class Policy(controller.Controller):
     @controller.protected()
     def delete_policy(self, context, policy_id):
         initiator = notifications._get_request_audit_info(context)
-        
+ 
         rules_ref = self.rule_api.list_rules_in_policy(policy_id)
         if rules_ref:
             for rule_ref in rules_ref:
@@ -167,22 +172,27 @@ class Rule(controller.Controller):
             if ref['rule']:
                 policy_id = ref['rule']['policy_id']
                 ref['policy'] = self.policy_api.get_policy(policy_id)
-        LOG.debug('\nREF IS LIKE THIS')
-        LOG.debug(ref)
         self.check_protection(context, prep_info, ref)
 
     @controller.protected()
     @validation.validated(schema.rule_create, 'rule')
     def create_rule(self, context, rule):
-        # check ref policy created and in ref domain
-        
         policy_id = rule['policy_id']
-        domain_id = rule['domain_id']
-        if not self.policy_api.check_policy_in_domain(policy_id, domain_id):
-            raise exception.ForbiddenAction('Rule Creation Forbidden: '
-                                        'no such policy in target domain.')
-        # create the rule
-        rule.pop('domain_id')
+        # (DWang) For those who are not Cloud Root User, we check if the given
+        # policy_id in request belongs to user's scoping domain.
+        # (TODO DWang) Move this logic out to an independent function.
+        if not context.has_key('is_admin'):
+            try:
+                policy_ref = self.policy_api.get_policy(policy_id)
+                policy_domain_id = policy_ref['domain_id']
+                subject_domain_id = self._get_domain_id_from_token(context)
+                if policy_domain_id != subject_domain_id:
+                    raise exception.ForbiddenAction('Rule Creation Forbidden:'
+                                        ' no such policy in scoping domain.')
+            except exception.PolicyNotFound:
+                raise
+ 
+        #(DWang) Proceed with rule creation
         ref = self._assign_unique_id(self._normalize_dict(rule))
         initiator = notifications._get_request_audit_info(context)
         ref = self.rule_api.create_rule(ref['id'], ref, initiator)
@@ -193,6 +203,10 @@ class Rule(controller.Controller):
     def update_rule(self, context, rule_id, rule):
         self._require_matching_id(rule_id, rule)
         initiator = notifications._get_request_audit_info(context)
+        # (DWang) Forbid changing the policy that a rule belongs to through
+        # this method.
+        if rule.has_key('policy_id'):
+            rule.pop('policy_id')
         ref = self.rule_api.update_rule(rule_id, rule, initiator)
         return Rule.wrap_member(context, ref)
 
@@ -201,7 +215,7 @@ class Rule(controller.Controller):
         ref = self.rule_api.get_rule(rule_id)
         return Rule.wrap_member(context, ref)
 
-    @controller.filterprotected('domain_id', 'policy_id','service',
+    @controller.filterprotected('policy_id', 'service',
                                 'permission')
     def list_rules(self, context, filters):
         hints = Rule.build_driver_hints(context, filters)
@@ -212,3 +226,4 @@ class Rule(controller.Controller):
     def delete_rule(self, context, rule_id):
         initiator = notifications._get_request_audit_info(context)
         return self.rule_api.delete_rule(rule_id, initiator)
+
