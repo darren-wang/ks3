@@ -620,9 +620,13 @@ class Controller(wsgi.Application):
             if target_attr:
                 policy_dict = {'obj': target_attr}
             policy_dict.update(prep_info['input_attr'])
-            self.policy_api.enforce(action,
-                                    utils.flatten_dict(policy_dict),
-                                    creds)
+            target = utils.flatten_dict(policy_dict)
+
+            LOG.debug('Evaluating against System Authz Policies')
+            self.policy_api.enforce(action, target, creds, 'system')
+
+            LOG.debug('Evaluating against Domain Authz Policies')
+            self.policy_api.enforce(action, target, creds, 'domain')
             LOG.debug('RBAC: Authorization granted')
 
     @classmethod
