@@ -180,7 +180,6 @@ class Rule(controller.Controller):
 
     @controller.protected()
     def get_rule(self, context, rule_id):
-        # where do we get this rule_id? url?
         ref = self.rule_api.get_rule(rule_id)
         return Rule.wrap_member(context, ref)
 
