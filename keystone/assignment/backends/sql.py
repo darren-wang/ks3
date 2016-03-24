@@ -58,16 +58,16 @@ class Assignment(keystone_assignment.Driver):
     def default_resource_driver(self):
         return 'keystone.resource.backends.sql.Resource'
 
-    def list_user_ids_for_project(self, tenant_id):
+    def list_user_ids_for_project(self, project_id):
         with sql.transaction() as session:
             query = session.query(RoleAssignment.actor_id)
             query = query.filter_by(type=AssignmentType.USER_PROJECT)
-            query = query.filter_by(target_id=tenant_id)
+            query = query.filter_by(target_id=project_id)
             query = query.distinct('actor_id')
             assignments = query.all()
             return [assignment.actor_id for assignment in assignments]
 
-    def _get_metadata(self, user_id=None, tenant_id=None,
+    def _get_metadata(self, user_id=None, project_id=None,
                       domain_id=None, group_id=None, session=None):
         # TODO(henry-nash): This method represents the last vestiges of the old
         # metadata concept in this driver.  Although we no longer need it here,
@@ -84,19 +84,19 @@ class Assignment(keystone_assignment.Driver):
         def _calc_assignment_type():
             # Figure out the assignment type we're checking for from the args.
             if user_id:
-                if tenant_id:
+                if project_id:
                     return AssignmentType.USER_PROJECT
                 else:
                     return AssignmentType.USER_DOMAIN
             else:
-                if tenant_id:
+                if project_id:
                     return AssignmentType.GROUP_PROJECT
                 else:
                     return AssignmentType.GROUP_DOMAIN
 
         q = q.filter_by(type=_calc_assignment_type())
         q = q.filter_by(actor_id=user_id or group_id)
-        q = q.filter_by(target_id=tenant_id or domain_id)
+        q = q.filter_by(target_id=project_id or domain_id)
         refs = q.all()
         if not refs:
             raise exception.MetadataNotFound()
@@ -313,23 +313,23 @@ class Assignment(keystone_assignment.Driver):
                 group_sql_conditions).distinct()
         return [x.target_id for x in query.all()]
 
-    def add_role_to_user_and_project(self, user_id, tenant_id, role_id):
+    def add_role_to_user_and_project(self, user_id, project_id, role_id):
         try:
             with sql.transaction() as session:
                 session.add(RoleAssignment(
                     type=AssignmentType.USER_PROJECT,
-                    actor_id=user_id, target_id=tenant_id,
+                    actor_id=user_id, target_id=project_id,
                     role_id=role_id, inherited=False))
         except sql.DBDuplicateEntry:
             msg = ('User %s already has role %s in tenant %s'
-                   % (user_id, role_id, tenant_id))
+                   % (user_id, role_id, project_id))
             raise exception.Conflict(type='role grant', details=msg)
 
-    def remove_role_from_user_and_project(self, user_id, tenant_id, role_id):
+    def remove_role_from_user_and_project(self, user_id, project_id, role_id):
         with sql.transaction() as session:
             q = session.query(RoleAssignment)
             q = q.filter_by(actor_id=user_id)
-            q = q.filter_by(target_id=tenant_id)
+            q = q.filter_by(target_id=project_id)
             q = q.filter_by(role_id=role_id)
             if q.delete() == 0:
                 raise exception.RoleNotFound(message=_(
