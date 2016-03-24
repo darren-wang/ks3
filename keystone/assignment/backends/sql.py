@@ -321,7 +321,7 @@ class Assignment(keystone_assignment.Driver):
                     actor_id=user_id, target_id=project_id,
                     role_id=role_id, inherited=False))
         except sql.DBDuplicateEntry:
-            msg = ('User %s already has role %s in tenant %s'
+            msg = ('User %s already has role %s in project %s'
                    % (user_id, role_id, project_id))
             raise exception.Conflict(type='role grant', details=msg)
 
