@@ -229,6 +229,10 @@ class GrantAssignment(controller.Controller):
         ref = {}
         if role_id:
             ref['role'] = self.role_api.get_role(role_id)
+            if ref['role']['domain_id'] == CONF.role.sys_role_domain_id:
+                op_obj = protection['f_name'].split('_')
+                new_perm = ''.join([op_obj[0], '_sys_', op_obj[1]])
+                protection['f_name'] = new_perm
         if user_id:
             try:
                 ref['user'] = self.identity_api.get_user(user_id)
