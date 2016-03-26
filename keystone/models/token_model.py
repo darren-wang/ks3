@@ -120,7 +120,6 @@ class KeystoneToken(dict):
             # Do not raise KeyError, raise UnexpectedError
             raise exception.UnexpectedError()
 
-
     @property
     def domain_name(self):
         try:
