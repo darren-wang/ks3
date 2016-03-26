@@ -311,19 +311,6 @@ class EndpointGroupNotFound(NotFound):
     message_format = _("Could not find Endpoint Group: %(endpoint_group_id)s")
 
 
-class IdentityProviderNotFound(NotFound):
-    message_format = _("Could not find Identity Provider: %(idp_id)s")
-
-
-class ServiceProviderNotFound(NotFound):
-    message_format = _("Could not find Service Provider: %(sp_id)s")
-
-
-class FederatedProtocolNotFound(NotFound):
-    message_format = _("Could not find federated protocol %(protocol_id)s for"
-                       " Identity Provider: %(idp_id)s")
-
-
 class PublicIDNotFound(NotFound):
     # This is used internally and mapped to either User/GroupNotFound or,
     # Assertion before the exception leaves Keystone.
@@ -443,3 +430,5 @@ class UnsupportedTokenVersionException(Exception):
     """Token version is unrecognizable or unsupported."""
     pass
 
+class UnsupportedTokenScope(Exception):
+    pass
