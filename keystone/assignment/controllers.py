@@ -50,7 +50,7 @@ class ProjectAssignment(controller.Controller):
         super(ProjectAssignment, self).__init__()
         self.get_member_from_driver = self.resource_api.get_project
 
-    @controller.filterprotected('enabled', 'name', 'domain_id')
+    @controller.filterprotected(None, 'enabled', 'name', 'domain_id')
     def list_user_projects(self, context, filters, user_id):
         hints = ProjectAssignment.build_driver_hints(context, filters)
         refs = self.assignment_api.list_projects_for_user(user_id,
@@ -627,7 +627,7 @@ class RoleAssignment(controller.Controller):
             msg = _('Specify a user or group, not both')
             raise exception.ValidationError(msg)
 
-    @controller.filterprotected('group.id', 'role.id',
+    @controller.filterprotected(None, 'group.id', 'role.id',
                                 'scope.domain.id', 'scope.project.id',
                                 'scope.OS-INHERIT:inherited_to', 'user.id')
     def list_role_assignments(self, context, filters):

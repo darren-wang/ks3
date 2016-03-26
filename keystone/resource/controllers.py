@@ -97,7 +97,7 @@ class Domain(controller.Controller):
         domain_ref.update(role_ref)
         return domain_ref
 
-    @controller.filterprotected('enabled', 'name')
+    @controller.filterprotected(None, 'enabled', 'name')
     def list_domains(self, context, filters):
         hints = Domain.build_driver_hints(context, filters)
         refs = self.resource_api.list_domains(hints=hints)
@@ -141,7 +141,7 @@ class Project(controller.Controller):
                                                initiator=initiator)
         return Project.wrap_member(context, ref)
 
-    @controller.filterprotected('domain_id', 'enabled', 'name',
+    @controller.filterprotected(None, 'domain_id', 'enabled', 'name',
                                 'parent_id')
     def list_projects(self, context, filters):
         hints = Project.build_driver_hints(context, filters)

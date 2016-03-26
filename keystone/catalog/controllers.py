@@ -62,7 +62,7 @@ class Region(controller.Controller):
             Region.wrap_member(context, ref),
             status=(201, 'Created'))
 
-    @controller.filterprotected('parent_region_id')
+    @controller.filterprotected(None, 'parent_region_id')
     def list_regions(self, context, filters):
         hints = Region.build_driver_hints(context, filters)
         refs = self.catalog_api.list_regions(hints)
@@ -104,7 +104,7 @@ class Service(controller.Controller):
         ref = self.catalog_api.create_service(ref['id'], ref, initiator)
         return Service.wrap_member(context, ref)
 
-    @controller.filterprotected('type', 'name')
+    @controller.filterprotected(None, 'type', 'name')
     def list_services(self, context, filters):
         hints = Service.build_driver_hints(context, filters)
         refs = self.catalog_api.list_services(hints=hints)
@@ -150,7 +150,7 @@ class Endpoint(controller.Controller):
         ref = self.catalog_api.create_endpoint(ref['id'], ref, initiator)
         return Endpoint.wrap_member(context, ref)
 
-    @controller.filterprotected('interface', 'service_id', 'region_id')
+    @controller.filterprotected(None, 'interface', 'service_id', 'region_id')
     def list_endpoints(self, context, filters):
         hints = Endpoint.build_driver_hints(context, filters)
         refs = self.catalog_api.list_endpoints(hints=hints)

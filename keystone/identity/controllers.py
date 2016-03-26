@@ -51,7 +51,7 @@ class User(controller.Controller):
         ref = self.identity_api.create_user(ref, initiator)
         return User.wrap_member(context, ref)
 
-    @controller.filterprotected('domain_id', 'enabled', 'name')
+    @controller.filterprotected(None, 'domain_id', 'enabled', 'name')
     def list_users(self, context, filters):
         hints = User.build_driver_hints(context, filters)
         refs = self.identity_api.list_users(
@@ -106,7 +106,7 @@ class User(controller.Controller):
         ref['group'] = self.identity_api.get_group(group_id)
         self.check_protection(context, prep_info, ref)
 
-    @controller.filterprotected('domain_id', 'enabled', 'name')
+    @controller.filterprotected(None, 'domain_id', 'enabled', 'name')
     def list_users_in_group(self, context, filters, group_id):
         hints = User.build_driver_hints(context, filters)
         refs = self.identity_api.list_users_in_group(group_id, hints=hints)
@@ -144,7 +144,7 @@ class Group(controller.Controller):
         ref = self.identity_api.create_group(ref, initiator)
         return Group.wrap_member(context, ref)
 
-    @controller.filterprotected('domain_id', 'name')
+    @controller.filterprotected(None, 'domain_id', 'name')
     def list_groups(self, context, filters):
         hints = Group.build_driver_hints(context, filters)
         refs = self.identity_api.list_groups(
@@ -152,7 +152,7 @@ class Group(controller.Controller):
             hints=hints)
         return Group.wrap_collection(context, refs, hints=hints)
 
-    @controller.filterprotected('name')
+    @controller.filterprotected(None, 'name')
     def list_groups_for_user(self, context, filters, user_id):
         hints = Group.build_driver_hints(context, filters)
         refs = self.identity_api.list_groups_for_user(user_id, hints=hints)

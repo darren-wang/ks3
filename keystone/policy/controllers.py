@@ -81,7 +81,7 @@ class Policy(controller.Controller):
 
         return Policy.wrap_member(context, ref)
 
-    @controller.filterprotected('domain_id', 'name', 'enabled')
+    @controller.filterprotected(None, 'domain_id', 'name', 'enabled')
     def list_policies(self, context, filters):
         hints = Policy.build_driver_hints(context, filters)
         refs = self.policy_api.list_policies(hints=hints)
@@ -215,7 +215,7 @@ class Rule(controller.Controller):
         ref = self.rule_api.get_rule(rule_id)
         return Rule.wrap_member(context, ref)
 
-    @controller.filterprotected('policy_id', 'service',
+    @controller.filterprotected(None, 'policy_id', 'service',
                                 'permission')
     def list_rules(self, context, filters):
         hints = Rule.build_driver_hints(context, filters)
