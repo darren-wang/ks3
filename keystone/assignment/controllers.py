@@ -183,7 +183,6 @@ class Role(controller.Controller):
         return Role.wrap_collection(context, refs, hints=hints)
 
 
-
 @dependency.requires('assignment_api', 'identity_api', 'resource_api',
                      'role_api')
 class GrantAssignment(controller.Controller):
