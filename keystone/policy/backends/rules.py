@@ -75,8 +75,8 @@ def enforce(action, target, creds, check_type, do_raise=True):
 class Policy(policy.PolicyDriver):
 
     def enforce(self, action, target, creds, check_type):
-        LOG.debug('API protection:\nsub:%(creds)s \nACT\n'
-        'service:%(serv)s permission:%(perm)s\nON\n'
+        LOG.debug('API protection:\nsubject:%(creds)s\nact\n'
+        'service:%(serv)s permission:%(perm)s\non\n'
         'target: %(target)s\n', {
             'serv': action[0], 'perm': action[1], 'creds': creds,
             'target':target})

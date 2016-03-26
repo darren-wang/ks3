@@ -375,6 +375,10 @@ FILE_OPTIONS = {
         cfg.IntOpt('list_limit',
                    help='Maximum number of entities that will be returned '
                         'in a role collection.'),
+        cfg.StrOpt('sys_role_domain_id', default='system',
+                   help='This id is used to separate system roles from domain-'
+                        'level roles, this id does NOT refers to any existing '
+                        'domain, it is just a symbol.'),
     ],
     'rule':[
         cfg.StrOpt('driver',

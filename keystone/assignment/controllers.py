@@ -26,10 +26,12 @@ from six.moves import urllib
 from keystone.assignment import schema
 from keystone.common import controller
 from keystone.common import dependency
+from keystone.common import utils
 from keystone.common import validation
 from keystone import exception
 from keystone.i18n import _, _LW
 from keystone.models import token_model
+from keystone import exception
 from keystone import notifications
 
 
@@ -67,7 +69,45 @@ class Role(controller.Controller):
         super(Role, self).__init__()
         self.get_member_from_driver = self.role_api.get_role
 
-    @controller.protected()
+    def _check_sys_role(self, context, prep_info, *args, **kwargs):
+        target = dict()
+
+        if 'role_id' in kwargs:
+        # (DWang) Get, delete and update system and domain roles
+            role_ref = self.role_api.get_role(kwargs['role_id'])
+            if role_ref['domain_id'] == CONF.role.sys_role_domain_id:
+                op_obj = prep_info['f_name'].split('_')
+                sys_role_perm = ''.join([op_obj[0], '_sys_', op_obj[1]])
+                action = ('keystone', sys_role_perm)
+            else:
+                action = ('keystone', prep_info['f_name'])
+            target['obj'] = {'role': role_ref}
+        elif 'role' in kwargs and not kwargs['role']['domain_id']:
+        # (DWang) Create system roles
+            op_obj = prep_info['f_name'].split('_')
+            sys_role_perm = ''.join([op_obj[0], '_sys_', op_obj[1]])
+            action = ('keystone', sys_role_perm)
+        else:
+        # (DWang) Create domain roles
+            action = ('keystone', prep_info['f_name'])
+
+        creds = controller._build_policy_check_credentials(self, action,
+                                                            context, kwargs)
+        for k in kwargs.iterkeys():
+            if isinstance(kwargs[k], dict):
+                target['reqBody.'+k] = kwargs[k]
+            else:
+                target['url.'+k] = kwargs[k]
+        target = utils.flatten_dict(target)
+
+        LOG.debug('Evaluating against system Authz Policy.')
+        self.policy_api.enforce(action, target, creds, 'system')
+
+        LOG.debug('Evaluating against domain Authz Policy.')
+        self.policy_api.enforce(action, target, creds, 'domain')
+        LOG.debug('RBAC: Authorization granted')
+
+    @controller.protected(callback=_check_sys_role)
     @validation.validated(schema.role_create, 'role')
     def create_role(self, context, role):
         if role['name'] == CONF.member_role_name:
@@ -78,24 +118,22 @@ class Role(controller.Controller):
         else:
             role = self._assign_unique_id(role)
 
+        if not role['domain_id']:
+        # (DWang) Create system role
+            role['domain_id'] = CONF.role.sys_role_domain_id
+
         ref = self._normalize_dict(role)
 
         initiator = notifications._get_request_audit_info(context)
         ref = self.role_api.create_role(ref['id'], ref, initiator)
         return Role.wrap_member(context, ref)
 
-    @controller.filterprotected('name', 'domain_id')
-    def list_roles(self, context, filters):
-        hints = Role.build_driver_hints(context, filters)
-        refs = self.role_api.list_roles(hints=hints)
-        return Role.wrap_collection(context, refs, hints=hints)
-
-    @controller.protected()
+    @controller.protected(callback=_check_sys_role)
     def get_role(self, context, role_id):
         ref = self.role_api.get_role(role_id)
         return Role.wrap_member(context, ref)
 
-    @controller.protected()
+    @controller.protected(callback=_check_sys_role)
     @validation.validated(schema.role_update, 'role')
     def update_role(self, context, role_id, role):
         self._require_matching_id(role_id, role)
@@ -105,17 +143,51 @@ class Role(controller.Controller):
         ref = self.role_api.update_role(role_id, role, initiator)
         return Role.wrap_member(context, ref)
 
-    @controller.protected()
+    @controller.protected(callback=_check_sys_role)
     def delete_role(self, context, role_id):
         initiator = notifications._get_request_audit_info(context)
         self.role_api.delete_role(role_id, initiator)
+
+    def _check_list_sys_roles(self, context, prep_info, *filters, **kwargs):
+        if not 'query_string' in context:
+            raise exception.MissingQueryString(query='domain_id')
+        elif not 'domain_id' in context['query_string']:
+            raise exception.MissingQueryString(query='domain_id')
+        elif context['query_string']['domain_id'] == (CONF.role.
+                                                    sys_role_domain_id):
+            prep_info['f_name'] = 'list_sys_roles'
+
+        action = ('keystone', prep_info['f_name'])
+        creds = controller._build_policy_check_credentials(self, action,
+                                                            context, kwargs)
+
+        target = dict()
+        for item in filters:
+            if item in context['query_string']:
+                target['qStr.'+item] = context['query_string'][item]
+        for key in kwargs:
+            target['url.'+key] = kwargs[key]
+        target = utils.flatten_dict(target)
+
+        LOG.debug('Evaluating against System Authz Policy')
+        self.policy_api.enforce(action, target, creds, 'system')
+
+        LOG.debug('Evaluating against Domain Authz Policy')
+        self.policy_api.enforce(action, target, creds, 'domain')
+        LOG.debug('RBAC: Authorization granted')
+
+    @controller.filterprotected(_check_list_sys_roles, 'name', 'domain_id')
+    def list_roles(self, context, filters):
+        hints = Role.build_driver_hints(context, filters)
+        refs = self.role_api.list_roles(hints=hints)
+        return Role.wrap_collection(context, refs, hints=hints)
+
 
 
 @dependency.requires('assignment_api', 'identity_api', 'resource_api',
                      'role_api')
 class GrantAssignment(controller.Controller):
     """The V3 Grant Assignment APIs."""
-
     collection_name = 'roles'
     member_name = 'role'
 

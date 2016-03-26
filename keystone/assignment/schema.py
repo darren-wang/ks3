@@ -16,7 +16,7 @@ from keystone.common.validation import parameter_types
 
 _role_create_properties = {
     'description': validation.nullable(parameter_types.description),
-    'domain_id': parameter_types.id_string,
+    'domain_id':parameter_types.id_string,
     'name': parameter_types.name
 }
 

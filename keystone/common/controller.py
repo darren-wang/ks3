@@ -121,27 +121,27 @@ def protected(callback=None):
                 target.update(subParams)
                 target = utils.flatten_dict(target)
 
-                LOG.debug('Evaluating against System Authz Policies')
+                LOG.debug('Evaluating against System Authz Policy')
                 self.policy_api.enforce(action, target, creds, 'system')
 
-                LOG.debug('Evaluating against Domain Authz Policies')
+                LOG.debug('Evaluating against Domain Authz Policy')
                 self.policy_api.enforce(action, target, creds, 'domain')
-                LOG.debug('\n#### CREDS HERE ####\n')
-                LOG.debug(creds)
-                LOG.debug('\n#### TARGET HERE ####\n')
-                LOG.debug(target)
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
 
 
-def filterprotected(*filters):
+def filterprotected(callback=None, *filters):
     """Wraps filtered API calls with role based access controls (RBAC)."""
     def _filterprotected(f):
         @functools.wraps(f)
         def wrapper(self, context, **kwargs):
             if 'is_admin' in context and context['is_admin']:
                 LOG.warning(_LW('RBAC: Bypassing authorization'))
+            elif callback is not None:
+                prep_info = {'f_name': f.__name__,
+                             'input_attr': kwargs}
+                callback(self, context, prep_info, *filters, **kwargs)
             else:
                 action = ('keystone', f.__name__)
                 creds = _build_policy_check_credentials(self,
@@ -171,16 +171,11 @@ def filterprotected(*filters):
                     target['url.'+key] = kwargs[key]
                 target = utils.flatten_dict(target)
 
-                LOG.debug('Evaluating against System Authz Policies')
+                LOG.debug('Evaluating against System Authz Policy')
                 self.policy_api.enforce(action, target, creds, 'system')
 
-                LOG.debug('Evaluating against Domain Authz Policies')
+                LOG.debug('Evaluating against Domain Authz Policy')
                 self.policy_api.enforce(action, target, creds, 'domain')
-
-                LOG.debug('\n#### CREDS HERE ####\n')
-                LOG.debug(creds)
-                LOG.debug('\n#### TARGET HERE ####\n')
-                LOG.debug(target)
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected
@@ -598,10 +593,10 @@ class Controller(wsgi.Application):
             policy_dict.update(prep_info['input_attr'])
             target = utils.flatten_dict(policy_dict)
 
-            LOG.debug('Evaluating against System Authz Policies')
+            LOG.debug('Evaluating against System Authz Policy')
             self.policy_api.enforce(action, target, creds, 'system')
 
-            LOG.debug('Evaluating against Domain Authz Policies')
+            LOG.debug('Evaluating against Domain Authz Policy')
             self.policy_api.enforce(action, target, creds, 'domain')
             LOG.debug('RBAC: Authorization granted')
 
