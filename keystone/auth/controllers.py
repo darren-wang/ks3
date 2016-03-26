@@ -26,7 +26,7 @@ from keystone.common import controller
 from keystone.common import dependency
 from keystone.common import wsgi
 from keystone import config
-#from keystone.contrib import federation
+from keystone.models import token_model
 from keystone import exception
 from keystone.i18n import _, _LI, _LW
 from keystone.resource import controllers as resource_controllers
@@ -334,10 +334,6 @@ class Auth(controller.Controller):
     def authenticate_for_token(self, context, auth=None):
         """Authenticate user and issue a token."""
         include_catalog = 'nocatalog' not in context['query_string']
-        LOG.debug("\n#### CONTEXT HERE ####\n")
-        LOG.debug(context)
-        LOG.debug("\n#### AUTH HERE ####\n")
-        LOG.debug(auth)
         auth_info = AuthInfo.create(context, auth=auth)
         auth_context = AuthContext(extras={},
                                        method_names=[],
@@ -419,7 +415,32 @@ class Auth(controller.Controller):
             msg = _('User not found')
             raise exception.Unauthorized(msg)
 
-    @controller.protected()
+    def _check_subject_token(self, context, protection, *args, **kwargs):
+        target = {}
+
+        if context.get('subject_token_id') is not None:
+            ks_token = token_model.KeystoneToken(
+                token_id=context['subject_token_id'],
+                token_data=self.token_provider_api.validate_token(
+                    context['subject_token_id']))
+            target.setdefault('token', {})
+            target['token']['user_id'] = ks_token.user_id
+            target['token']['id'] = ks_token.token_id
+            target['token']['domain_id'] = ks_token.user_domain_id
+            if ks_token.project_scoped:
+                target['token']['scope'] = 'project'
+                target['token']['scope_project_id'] = ks_token.project_id
+                target['token']['scope_domain_id'] = (ks_token.
+                                                    project_domain_id)
+            elif ks_token.domain_scoped:
+                target['token']['scope'] = 'domain'
+                target['token']['scope_domain_id'] = ks_token.domain_id
+            else:
+                raise exception.UnsupportedTokenScope()
+
+        return self.check_protection(context, protection, target)
+
+    @controller.protected(callback=_check_subject_token)
     def check_token(self, context):
         token_id = context.get('subject_token_id')
         token_data = self.token_provider_api.validate_v3_token(
@@ -429,12 +450,12 @@ class Auth(controller.Controller):
         # body.
         return render_token_data_response(token_id, token_data)
 
-    @controller.protected()
+    @controller.protected(callback=_check_subject_token)
     def revoke_token(self, context):
         token_id = context.get('subject_token_id')
         return self.token_provider_api.revoke_token(token_id)
 
-    @controller.protected()
+    @controller.protected(callback=_check_subject_token)
     def validate_token(self, context):
         token_id = context.get('subject_token_id')
         include_catalog = 'nocatalog' not in context['query_string']
@@ -516,7 +537,7 @@ class Auth(controller.Controller):
     def get_auth_catalog(self, context):
         auth_context = self.get_auth_context(context)
         user_id = auth_context.get('user_id')
-        project_id = auth_context.get('project_id')
+        project_id = auth_context.get('scope_project_id')
 
         if not project_id:
             raise exception.Forbidden(

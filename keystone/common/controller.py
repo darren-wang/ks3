@@ -109,29 +109,6 @@ def protected(callback=None):
                         ref = self.get_member_from_driver(kwargs[key])
                         target['obj'] = {self.member_name: ref}
 
-                # TODO(henry-nash): Move this entire code to a member
-                # method inside v3 Auth
-                if context.get('subject_token_id') is not None:
-                    ks_token = token_model.KeystoneToken(
-                        token_id=context['subject_token_id'],
-                        token_data=self.token_provider_api.validate_token(
-                            context['subject_token_id']))
-                    target.setdefault('obj', {})
-                    target['obj'].setdefault(self.member_name, {})
-                    target['obj'][self.member_name]['user_id'] = (
-                        ks_token.user_id)
-                    try:
-                        user_domain_id = ks_token.user_domain_id
-                    except exception.UnexpectedError:
-                        user_domain_id = None
-                    if user_domain_id:
-                        target['obj'][self.member_name].setdefault(
-                            'user', {})
-                        target['obj'][self.member_name][
-                            'user'].setdefault('domain', {})
-                        target['obj'][self.member_name]['user'][
-                            'domain']['id'] = (user_domain_id)
-
                 # Add in the kwargs, which means reqBody in create and 
                 # update operations.
 
