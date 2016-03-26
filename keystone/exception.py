@@ -229,6 +229,10 @@ class InvalidDomainConfig(Forbidden):
     message_format = _("Invalid domain specific configuration: %(reason)s")
 
 
+class MissingQueryString(Forbidden):
+    message_format = _("Missing query string %(query)s in your request")
+
+
 class NotFound(Error):
     message_format = _("Could not find: %(target)s")
     code = 404
@@ -297,10 +301,6 @@ class UserNotFound(NotFound):
 
 class GroupNotFound(NotFound):
     message_format = _("Could not find group: %(group_id)s")
-
-
-class MappingNotFound(NotFound):
-    message_format = _("Could not find mapping: %(mapping_id)s")
 
 
 class VersionNotFound(NotFound):
