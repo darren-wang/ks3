@@ -334,10 +334,10 @@ class Auth(controller.Controller):
     def authenticate_for_token(self, context, auth=None):
         """Authenticate user and issue a token."""
         include_catalog = 'nocatalog' not in context['query_string']
-	LOG.debug("\n#### CONTEXT HERE ####\n")
-	LOG.debug(context)
-	LOG.debug("\n#### AUTH HERE ####\n")
-	LOG.debug(auth)
+        LOG.debug("\n#### CONTEXT HERE ####\n")
+        LOG.debug(context)
+        LOG.debug("\n#### AUTH HERE ####\n")
+        LOG.debug(auth)
         auth_info = AuthInfo.create(context, auth=auth)
         auth_context = AuthContext(extras={},
                                        method_names=[],

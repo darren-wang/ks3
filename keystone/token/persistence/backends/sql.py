@@ -136,10 +136,6 @@ class Token(token.persistence.Driver):
                     token_ref_dict = token_ref.to_dict()
                     if not self._tenant_matches(tenant_id, token_ref_dict):
                         continue
-                if consumer_id:
-                    token_ref_dict = token_ref.to_dict()
-                    if not self._consumer_matches(consumer_id, token_ref_dict):
-                        continue
 
                 token_ref.valid = False
                 token_list.append(token_ref.id)
@@ -150,16 +146,6 @@ class Token(token.persistence.Driver):
         return ((tenant_id is None) or
                 (token_ref_dict.get('tenant') and
                  token_ref_dict['tenant'].get('id') == tenant_id))
-
-    def _consumer_matches(self, consumer_id, ref):
-        if consumer_id is None:
-            return True
-        else:
-            try:
-                oauth = ref['token_data']['token'].get('OS-OAUTH1', {})
-                return oauth and oauth['consumer_id'] == consumer_id
-            except KeyError:
-                return False
 
     def _list_tokens_for_user(self, user_id, tenant_id=None):
         session = sql.get_session()
@@ -176,30 +162,12 @@ class Token(token.persistence.Driver):
                 tokens.append(token_ref['id'])
         return tokens
 
-    def _list_tokens_for_consumer(self, user_id, consumer_id):
-        tokens = []
-        session = sql.get_session()
-        with session.begin():
-            now = timeutils.utcnow()
-            query = session.query(TokenModel)
-            query = query.filter(TokenModel.expires > now)
-            query = query.filter(TokenModel.user_id == user_id)
-            token_references = query.filter_by(valid=True)
-
-            for token_ref in token_references:
-                token_ref_dict = token_ref.to_dict()
-                if self._consumer_matches(consumer_id, token_ref_dict):
-                    tokens.append(token_ref_dict['id'])
-        return tokens
-
     def _list_tokens(self, user_id, tenant_id=None,
                      consumer_id=None):
         if not CONF.token.revoke_by_id:
             return []
-        if consumer_id:
-            return self._list_tokens_for_consumer(user_id, consumer_id)
-        else:
-            return self._list_tokens_for_user(user_id, tenant_id)
+        
+        return self._list_tokens_for_user(user_id, tenant_id)
 
     def list_revoked_tokens(self):
         session = sql.get_session()
