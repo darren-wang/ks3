@@ -100,11 +100,7 @@ class Role(controller.Controller):
                 target['url.'+k] = kwargs[k]
         target = utils.flatten_dict(target)
 
-        LOG.debug('Evaluating against system Authz Policy.')
-        self.policy_api.enforce(action, target, creds, 'system')
-
-        LOG.debug('Evaluating against domain Authz Policy.')
-        self.policy_api.enforce(action, target, creds, 'domain')
+        self.policy_api.enforce(action, target, creds)
         LOG.debug('RBAC: Authorization granted')
 
     @controller.protected(callback=_check_sys_role)
@@ -169,11 +165,8 @@ class Role(controller.Controller):
             target['url.'+key] = kwargs[key]
         target = utils.flatten_dict(target)
 
-        LOG.debug('Evaluating against System Authz Policy')
-        self.policy_api.enforce(action, target, creds, 'system')
+        self.policy_api.enforce(action, target, creds)
 
-        LOG.debug('Evaluating against Domain Authz Policy')
-        self.policy_api.enforce(action, target, creds, 'domain')
         LOG.debug('RBAC: Authorization granted')
 
     @controller.filterprotected(_check_list_sys_roles, 'name', 'domain_id')

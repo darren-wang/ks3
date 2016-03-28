@@ -40,7 +40,7 @@ def init():
         _ENFORCER = common_policy.Enforcer(CONF)
 
 
-def enforce(action, target, creds, check_type, do_raise=True):
+def enforce(action, target, creds, do_raise=True):
     """Verifies that the action is valid on the target in this context.
 
        :param creds: user credentials
@@ -69,18 +69,18 @@ def enforce(action, target, creds, check_type, do_raise=True):
         extra.update(exc=exception.ForbiddenAction, service=action[0],
                      permission=action[1], do_raise=do_raise)
 
-    return _ENFORCER.enforce(action, target, creds, check_type, **extra)
+    return _ENFORCER.enforce(action, target, creds, **extra)
 
 
 class Policy(policy.PolicyDriver):
 
-    def enforce(self, action, target, creds, check_type):
+    def enforce(self, action, target, creds):
         LOG.debug('API protection:\nsubject:%(creds)s\nact\n'
         'service:%(serv)s permission:%(perm)s\non\n'
         'target: %(target)s\n', {
             'serv': action[0], 'perm': action[1], 'creds': creds,
             'target':target})
-        enforce(action, target, creds, check_type)
+        enforce(action, target, creds)
 
     def create_policy(self, policy_id, policy):
         raise exception.NotImplemented()

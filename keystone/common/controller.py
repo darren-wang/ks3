@@ -121,11 +121,7 @@ def protected(callback=None):
                 target.update(subParams)
                 target = utils.flatten_dict(target)
 
-                LOG.debug('Evaluating against System Authz Policy')
-                self.policy_api.enforce(action, target, creds, 'system')
-
-                LOG.debug('Evaluating against Domain Authz Policy')
-                self.policy_api.enforce(action, target, creds, 'domain')
+                self.policy_api.enforce(action, target, creds)
             return f(self, context, *args, **kwargs)
         return inner
     return wrapper
@@ -171,11 +167,7 @@ def filterprotected(callback=None, *filters):
                     target['url.'+key] = kwargs[key]
                 target = utils.flatten_dict(target)
 
-                LOG.debug('Evaluating against System Authz Policy')
-                self.policy_api.enforce(action, target, creds, 'system')
-
-                LOG.debug('Evaluating against Domain Authz Policy')
-                self.policy_api.enforce(action, target, creds, 'domain')
+                self.policy_api.enforce(action, target, creds)
             return f(self, context, filters, **kwargs)
         return wrapper
     return _filterprotected
@@ -593,11 +585,7 @@ class Controller(wsgi.Application):
             policy_dict.update(prep_info['input_attr'])
             target = utils.flatten_dict(policy_dict)
 
-            LOG.debug('Evaluating against System Authz Policy')
-            self.policy_api.enforce(action, target, creds, 'system')
-
-            LOG.debug('Evaluating against Domain Authz Policy')
-            self.policy_api.enforce(action, target, creds, 'domain')
+            self.policy_api.enforce(action, target, creds)
             LOG.debug('RBAC: Authorization granted')
 
     @classmethod
