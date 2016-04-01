@@ -852,6 +852,27 @@ class RoleManager(manager.Manager):
 
         super(RoleManager, self).__init__(role_driver)
 
+        self.event_callbacks = {
+            notifications.ACTIONS.deleted: {
+                'domain': [self._domain_deleted],
+            },
+        }
+
+    def _domain_deleted(self, service, resource_type, operation,
+                        payload):
+        domain_id = payload['resource_info']
+
+        role_refs = self.list_roles_in_domain(domain_id)
+
+        for role in role_refs:
+            try:
+                self.delete_role(role['id'])
+            except exception.RoleNotFound:
+                LOG.debug(('Role %(role_id)s not found when deleting domain '
+                           'contents for %(domain_id)s, continuing with '
+                           'cleanup.'),
+                          {'role_id': role['id'], 'domain_id': domain_id})
+
     @MEMOIZE
     def get_role(self, role_id):
         return self.driver.get_role(role_id)

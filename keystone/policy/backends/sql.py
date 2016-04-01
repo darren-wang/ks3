@@ -22,8 +22,7 @@ class PolicyModel(sql.ModelBase, sql.DictBase):
     attributes = ['description', 'domain_id', 'enabled', 'id', 'name']
     id = sql.Column(sql.String(64), primary_key=True)
     name = sql.Column(sql.String(64), nullable=False)
-    domain_id = sql.Column(sql.String(64), sql.ForeignKey('domain.id'),
-                           nullable=False)
+    domain_id = sql.Column(sql.String(64), nullable=False)
     enabled = sql.Column(sql.Boolean, default=False, nullable=False)
     description = sql.Column(sql.Text(), nullable=True)
     extra = sql.Column(sql.JsonBlob())
@@ -34,8 +33,7 @@ class RuleModel(sql.ModelBase, sql.DictBase):
     __tablename__ = 'rule'
     attributes = ['id', 'policy_id', 'service', 'permission', 'condition']
     id = sql.Column(sql.String(64), primary_key=True)
-    policy_id = sql.Column(sql.String(64), sql.ForeignKey('policy.id'),
-                            nullable=False)
+    policy_id = sql.Column(sql.String(64), nullable=False)
     service = sql.Column(sql.String(64), nullable=False)
     permission = sql.Column(sql.String(64), nullable=False)
     condition = sql.Column(sql.JsonBlob(), nullable=True)

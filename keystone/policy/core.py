@@ -43,7 +43,28 @@ class PolicyManager(manager.Manager):
 
     def __init__(self):
         super(PolicyManager, self).__init__(CONF.policy.driver)
-    
+
+        self.event_callbacks = {
+            notifications.ACTIONS.deleted: {
+                'domain': [self._domain_deleted],
+            },
+        }
+
+    def _domain_deleted(self, service, resource_type, operation,
+                        payload):
+        domain_id = payload['resource_info']
+
+        policy_refs = self.list_policies_in_domain(domain_id)
+
+        for policy in policy_refs:
+            try:
+                self.delete_policy(policy['id'])
+            except exception.PolicyNotFound:
+                LOG.debug(('Policy %(p_id)s not found when deleting domain '
+                           'contents for %(domain_id)s, continuing with '
+                           'cleanup.'),
+                          {'p_id': policy['id'], 'domain_id': domain_id})
+
     def create_policy(self, policy_id, policy, initiator=None):
         ref = self.driver.create_policy(policy_id, policy)
         notifications.Audit.created(self._POLICY, policy_id, initiator)
@@ -101,6 +122,27 @@ class RuleManager(manager.Manager):
     
     def __init__(self):
         super(RuleManager, self).__init__(CONF.rule.driver)
+
+        self.event_callbacks = {
+            notifications.ACTIONS.deleted: {
+                'policy': [self._policy_deleted],
+            },
+        }
+
+    def _policy_deleted(self, service, resource_type, operation,
+                        payload):
+        policy_id = payload['resource_info']
+
+        rule_refs = self.list_rules_in_policy(policy_id)
+
+        for rule in rule_refs:
+            try:
+                self.delete_rule(rule['id'])
+            except exception.RuleNotFound:
+                LOG.debug(('Rule %(rule_id)s not found when deleting policy '
+                           'contents for %(policy_id)s, continuing with '
+                           'cleanup.'),
+                          {'rule_id': rule['id'], 'policy_id': policy_id})
 
     def create_rule(self, rule_id, rule, initiator=None):
         ref = self.driver.create_rule(rule_id, rule)

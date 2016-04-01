@@ -469,29 +469,6 @@ class Manager(manager.Manager):
         for project in roots:
             _delete_projects(project, proj_refs, examined)
 
-        user_refs = self.identity_api.list_users(domain_scope=domain_id)
-        if user_refs:
-            for user_ref in user_refs:
-                self.identity_api.delete_user(user_ref['id'])
-
-        group_refs = self.identity_api.list_groups(domain_scope=domain_id)
-        if group_refs:
-            for group_ref in group_refs:
-                self.identity_api.delete_group(group_ref['id'])
-
-        policy_refs = self.policy_api.list_policies_in_domain(domain_id)
-        if policy_refs:
-            for policy_ref in policy_refs:
-                rule_refs = self.rule_api.list_rules_in_policy(policy_ref['id'])
-                if rule_refs:
-                    for rule_ref in rule_refs:
-                        self.rule_api.delete_rule(rule_ref['id'])
-
-        role_refs = self.role_api.list_roles_in_domain(domain_id)
-        if role_refs:
-            for role_ref in role_refs:
-                self.role_api.delete_role(role_ref['id'])
-
     @manager.response_truncated
     def list_projects(self, hints=None):
         return self.driver.list_projects(hints or driver_hints.Hints())
