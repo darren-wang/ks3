@@ -14,7 +14,7 @@ from keystone.common import validation
 from keystone.common.validation import parameter_types
 
 
-_project_create_properties = {
+_project_properties = {
     'description': validation.nullable(parameter_types.description),
     # NOTE(lbragstad): domain_id isn't nullable according to some backends.
     # The identity-api should be updated to be consistent with the
@@ -47,7 +47,7 @@ project_update = {
     'additionalProperties': True
 }
 
-_domain_create_properties = {
+_domain_properties = {
     'description': validation.nullable(parameter_types.description),
     'enabled': parameter_types.boolean,
     'name': {
