@@ -56,8 +56,6 @@ class PolicyManager(manager.Manager):
             raise exception.PolicyNotFound(policy_id=policy_id)
 
     def update_policy(self, policy_id, policy, initiator=None):
-        if 'id' in policy and policy_id != policy['id']:
-            raise exception.ValidationError('Cannot change policy ID')
         try:
             ref = self.driver.update_policy(policy_id, policy)
         except exception.NotFound:
@@ -110,13 +108,8 @@ class RuleManager(manager.Manager):
         return ref
     
     def update_rule(self, rule_id, rule, initiator=None):
-        LOG.debug('\nRULE IS LIKE THIS\n')
-        LOG.debug(rule)
-        if 'id' in rule and rule_id != rule['id']:
-            raise exception.ValidationError('Cannot change rule ID')
         try:
             ref = self.driver.update_rule(rule_id, rule)
-
         except exception.NotFound:
             raise exception.RuleNotFound(rule_id=rule_id)
         notifications.Audit.updated(self._RULE, rule_id, initiator)

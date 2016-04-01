@@ -198,15 +198,18 @@ class Rule(controller.Controller):
         ref = self.rule_api.create_rule(ref['id'], ref, initiator)
         return Rule.wrap_member(context, ref)
 
+    def _require_matching_policy_id(self, ref_id, get_member):
+        if 'policy_id' in ref:
+            existing_ref = get_member(ref_id)
+            if ref['policy_id'] != existing_ref['policy_id']:
+                raise exception.ValidationError('Cannot change Policy ID')
+
     @controller.protected()
     @validation.validated(schema.rule_update, 'rule')
     def update_rule(self, context, rule_id, rule):
         self._require_matching_id(rule_id, rule)
+        self._require_matching_policy_id(rule_id, rule, self.rule_api.get_rule)
         initiator = notifications._get_request_audit_info(context)
-        # (DWang) Forbid changing the policy that a rule belongs to through
-        # this method.
-        if rule.has_key('policy_id'):
-            rule.pop('policy_id')
         ref = self.rule_api.update_rule(rule_id, rule, initiator)
         return Rule.wrap_member(context, ref)
 

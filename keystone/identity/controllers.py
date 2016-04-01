@@ -64,18 +64,15 @@ class User(controller.Controller):
         ref = self.identity_api.get_user(user_id)
         return User.wrap_member(context, ref)
 
-    def _update_user(self, context, user_id, user):
+    @controller.protected()
+    @validation.validated(schema.user_update, 'user')
+    def update_user(self, context, user_id, user):
         self._require_matching_id(user_id, user)
         self._require_matching_domain_id(
             user_id, user, self.identity_api.get_user)
         initiator = notifications._get_request_audit_info(context)
         ref = self.identity_api.update_user(user_id, user, initiator)
         return User.wrap_member(context, ref)
-
-    @controller.protected()
-    @validation.validated(schema.user_update, 'user')
-    def update_user(self, context, user_id, user):
-        return self._update_user(context, user_id, user)
 
     @controller.protected()
     def delete_user(self, context, user_id):
