@@ -104,7 +104,6 @@ class PolicyManager(manager.Manager):
                     return policy_ref
 
     def list_policies_in_domain(self, domain_id):
-        self.resource_api.get_domain(domain_id)
         return self.driver.list_policies_in_domain(domain_id)
          
     def check_policy_in_domain(self, policy_id, domain_id):
@@ -168,7 +167,6 @@ class RuleManager(manager.Manager):
         return rules
 
     def list_rules_in_policy(self, policy_id):
-        self.policy_api.get_policy(policy_id)
         return self.driver.list_rules_in_policy(policy_id)
 
     def delete_rule(self, rule_id, initiator):
