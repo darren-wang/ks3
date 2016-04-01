@@ -169,7 +169,7 @@ class RuleManager(manager.Manager):
     def list_rules_in_policy(self, policy_id):
         return self.driver.list_rules_in_policy(policy_id)
 
-    def delete_rule(self, rule_id, initiator):
+    def delete_rule(self, rule_id, initiator=None):
         try:
             ret = self.driver.delete_rule(rule_id)
         except exception.NotFound:
