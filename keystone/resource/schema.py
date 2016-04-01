@@ -29,20 +29,9 @@ _project_create_properties = {
     }
 }
 
-_project_update_properties = {
-    'description': validation.nullable(parameter_types.description),
-    'enabled': parameter_types.boolean,
-    'parent_id': validation.nullable(parameter_types.id_string),
-    'name': {
-        'type': 'string',
-        'minLength': 1,
-        'maxLength': 64
-    }
-}
-
 project_create = {
     'type': 'object',
-    'properties': _project_create_properties,
+    'properties': _project_properties,
     # NOTE(lbragstad): A project name is the only parameter required for
     # project creation according to the Identity V3 API. We should think
     # about using the maxProperties validator here, and in update.
@@ -52,7 +41,7 @@ project_create = {
 
 project_update = {
     'type': 'object',
-    'properties': _project_update_properties,
+    'properties': _project_properties,
     # NOTE(lbragstad) Make sure at least one property is being updated
     'minProperties': 1,
     'additionalProperties': True
@@ -72,21 +61,10 @@ _domain_create_properties = {
         'maxLength': 64
     }
 }
-#(DarrenWang) Here we don't allow to modify the 'domain_root_user'
-# through update_domain!
-_domain_update_properties = {
-    'description': validation.nullable(parameter_types.description),
-    'enabled': parameter_types.boolean,
-    'name': {
-        'type': 'string',
-        'minLength': 1,
-        'maxLength': 64
-    }
-}
 
 domain_create = {
     'type': 'object',
-    'properties': _domain_create_properties,
+    'properties': _domain_properties,
     # TODO(lbragstad): According to the V3 API spec, name isn't required but
     # the current implementation in assignment.controller:DomainV3 requires a
     # name for the domain.
@@ -96,7 +74,8 @@ domain_create = {
 
 domain_update = {
     'type': 'object',
-    'properties': _domain_update_properties,
+    'properties': _domain_properties,
     'minProperties': 1,
     'additionalProperties': True
 }
+
