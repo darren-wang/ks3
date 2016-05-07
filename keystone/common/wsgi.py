@@ -219,7 +219,7 @@ class Application(BaseApplication):
 
         params.update(arg_dict)
 
-        context.setdefault('is_admin', False)
+        context['is_admin'] = self._assert_admin(context)
 
         # TODO(termie): do some basic normalization on methods
         method = getattr(self, action)
@@ -286,8 +286,10 @@ class Application(BaseApplication):
     def _normalize_dict(self, d):
         return {self._normalize_arg(k): v for (k, v) in six.iteritems(d)}
 
-    def assert_admin(self, context):
-        if not context['is_admin']:
+    def _assert_admin(self, context):
+        if 'is_admin' in context and context['is_admin']:
+            return True
+        else:
             try:
                 user_token_ref = token_model.KeystoneToken(
                     token_id=context['token_id'],
@@ -306,14 +308,21 @@ class Application(BaseApplication):
                 raise exception.Unauthorized()
 
             if user_token_ref.project_scoped:
-                creds['tenant_id'] = user_token_ref.project_id
+                LOG.debug('Checking for Cloud Root User: project scoped.')
+                creds['scope'] = 'project'
+                creds['scope_project_id'] = user_token_ref.project_id
+                creds['scope_domain_id'] = user_token_ref.project_domain_id
+            elif user_token_ref.domain_scoped:
+                LOG.debug('Checking for Cloud Root User: domain scoped.')
+                creds['scope'] = 'domain'
+                creds['scope_domain_id'] = user_token_ref.domain_id
             else:
-                LOG.debug('Invalid tenant')
-                raise exception.Unauthorized()
+                LOG.debug('RBAC: Proceeding without project or domain scope')
 
             creds['roles'] = user_token_ref.role_names
+            creds['domain_id'] = user_token_ref.user_domain_id
             # Accept either is_admin or the admin role
-            self.policy_api.enforce(creds, 'admin_required', {})
+            return self.policy_api.enforce(creds, ('keystone', 'cru_check'), {})
 
     def _attribute_is_empty(self, ref, attribute):
         """Returns true if the attribute in the given ref (which is a
