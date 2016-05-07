@@ -289,6 +289,8 @@ class Application(BaseApplication):
     def _assert_admin(self, context):
         if 'is_admin' in context and context['is_admin']:
             return True
+        elif not context['token_id']:
+            return False
         else:
             try:
                 user_token_ref = token_model.KeystoneToken(
@@ -322,7 +324,8 @@ class Application(BaseApplication):
             creds['roles'] = user_token_ref.role_names
             creds['domain_id'] = user_token_ref.user_domain_id
             # Accept either is_admin or the admin role
-            return self.policy_api.enforce(creds, ('keystone', 'cru_check'), {})
+            return self.policy_api.enforce(('keystone','cru_check'), {},
+                                            creds, False)
 
     def _attribute_is_empty(self, ref, attribute):
         """Returns true if the attribute in the given ref (which is a

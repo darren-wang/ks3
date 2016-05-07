@@ -80,16 +80,17 @@ class Domain(controller.Controller):
     def create_domain(self, context, domain):
         ref = self._assign_unique_id(self._normalize_dict(domain))
         initiator = notifications._get_request_audit_info(context)
+
+        init_user = ''
         if ref.has_key('domain_root_user'):
             init_user = ref.pop('domain_root_user')
-        else:
-            init_user = ''
+
         ref = self.resource_api.create_domain(ref['id'], ref, initiator)
         domain_ref = Domain.wrap_member(context, ref)
 
         user_ref = self._create_init_user(init_user, ref['id'], initiator)
         role_ref = self._create_init_role(ref['id'], initiator)
-        self.assignment_api.create_grant(role_ref['role']['id'],
+        self.assignment_api.create_grant(CONF.role.sys_domain_admin_role_id,
                                     user_id=user_ref['user']['id'],
                                     domain_id=domain_ref['domain']['id'])
 
