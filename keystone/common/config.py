@@ -379,6 +379,13 @@ FILE_OPTIONS = {
                    help='This id is used to separate system roles from domain-'
                         'level roles, this id does NOT refers to any existing '
                         'domain, it is just a symbol.'),
+        cfg.StrOpt('sys_domain_admin_role_id', default='None',
+                   help='This is the id of system-role "domain_admin". Set '
+                        ' this value after system-role "domain_admin" was '
+                        ' created. It will be used in creating new domain.'),
+        cfg.StrOpt('sys_cloud_admin_role_id', default='None',
+                   help='This is the id of system-role "cloud_admin". Set this'
+                        ' value after system-role "cloud_admin" was created. ')
     ],
     'rule':[
         cfg.StrOpt('driver',
