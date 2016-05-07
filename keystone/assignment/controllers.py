@@ -289,8 +289,7 @@ class GrantAssignment(controller.Controller):
         """Grants a role to a user or group on either a domain or project."""
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
-
-        self._assure_matching_domain_id(self, role_id, user_id, group_id,
+        self._assure_matching_domain_id(role_id, user_id, group_id,
                                         domain_id, project_id)
 
         self.assignment_api.create_grant(
@@ -304,7 +303,7 @@ class GrantAssignment(controller.Controller):
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
 
-        self._assure_matching_domain_id(self, user_id, group_id, domain_id,
+        self._assure_matching_domain_id(None, user_id, group_id, domain_id,
                                         project_id)
 
         refs = self.assignment_api.list_grants(
@@ -319,7 +318,7 @@ class GrantAssignment(controller.Controller):
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
 
-        self._assure_matching_domain_id(self, role_id, user_id, group_id,
+        self._assure_matching_domain_id(role_id, user_id, group_id,
                                         domain_id, project_id)
 
         self.assignment_api.get_grant(
@@ -337,7 +336,7 @@ class GrantAssignment(controller.Controller):
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
 
-        self._assure_matching_domain_id(self, role_id, user_id, group_id,
+        self._assure_matching_domain_id(role_id, user_id, group_id,
                                         domain_id, project_id, True)
 
         self.assignment_api.delete_grant(
