@@ -242,12 +242,56 @@ class GrantAssignment(controller.Controller):
 
         self.check_protection(context, protection, ref)
 
+    def _assure_matching_domain_id(self, role_id=None, user_id=None, 
+                                   group_id=None, domain_id=None, 
+                                   project_id=None, allow_no_user=False):
+        ref = {}
+        if role_id:
+            ref['role'] = self.role_api.get_role(role_id)
+            role_domain_id = ref['role']['domain_id']
+            if role_domain_id == CONF.role.sys_role_domain_id:
+                role_domain_id = None
+        if user_id:
+            try:
+                ref['user'] = self.identity_api.get_user(user_id)
+                user_group_domain_id = ref['user']['domain_id']
+            except exception.UserNotFound:
+                if not allow_no_user:
+                    raise
+        else:
+            ref['group'] = self.identity_api.get_group(group_id)
+            user_group_domain_id = ref['group']['domain_id']
+
+        if domain_id:
+            ref['domain'] = self.resource_api.get_domain(domain_id)
+            project_domain_id = ref['domain']['id']
+        else:
+            ref['project'] = self.resource_api.get_project(project_id)
+            project_domain_id = ref['project']['domain_id']
+
+        # (DWang) These checks assure that target user/group belongs to the
+        # same domain of target scope and target role (if presents).
+        if user_group_domain_id != project_domain_id:
+            msg = _('Target user or group does not belong to the same domain'
+                    ' of target scope.')
+            raise exception.ValidationError(msg)
+        elif role_id and role_domain_id:
+            if role_domain_id != project_domain_id:
+                msg = _('Target role does not belong to the same domain'
+                        ' of target scope.')
+                raise exception.ValidationError(msg)
+        else:
+            pass
+
     @controller.protected(callback=_check_grant_protection)
     def create_grant(self, context, role_id, user_id=None,
                      group_id=None, domain_id=None, project_id=None):
         """Grants a role to a user or group on either a domain or project."""
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
+
+        self._assure_matching_domain_id(self, role_id, user_id, group_id,
+                                        domain_id, project_id)
 
         self.assignment_api.create_grant(
             role_id, user_id, group_id, domain_id, project_id,
@@ -260,6 +304,9 @@ class GrantAssignment(controller.Controller):
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
 
+        self._assure_matching_domain_id(self, user_id, group_id, domain_id,
+                                        project_id)
+
         refs = self.assignment_api.list_grants(
             user_id, group_id, domain_id, project_id,
             self._check_if_inherited(context))
@@ -271,6 +318,9 @@ class GrantAssignment(controller.Controller):
         """Checks if a role has been granted on either a domain or project."""
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
+
+        self._assure_matching_domain_id(self, role_id, user_id, group_id,
+                                        domain_id, project_id)
 
         self.assignment_api.get_grant(
             role_id, user_id, group_id, domain_id, project_id,
@@ -286,6 +336,9 @@ class GrantAssignment(controller.Controller):
         """Revokes a role from user/group on either a domain or project."""
         self._require_domain_xor_project(domain_id, project_id)
         self._require_user_xor_group(user_id, group_id)
+
+        self._assure_matching_domain_id(self, role_id, user_id, group_id,
+                                        domain_id, project_id, True)
 
         self.assignment_api.delete_grant(
             role_id, user_id, group_id, domain_id, project_id,
