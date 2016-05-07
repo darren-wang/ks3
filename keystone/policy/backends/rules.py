@@ -74,13 +74,13 @@ def enforce(action, target, creds, do_raise=True):
 
 class Policy(policy.PolicyDriver):
 
-    def enforce(self, action, target, creds):
+    def enforce(self, action, target, creds, do_raise=True):
         LOG.debug('API protection:\nsubject:%(creds)s\nact\n'
         'service:%(serv)s permission:%(perm)s\non\n'
         'target: %(target)s\n', {
             'serv': action[0], 'perm': action[1], 'creds': creds,
             'target':target})
-        enforce(action, target, creds)
+        return enforce(action, target, creds, do_raise)
 
     def create_policy(self, policy_id, policy):
         raise exception.NotImplemented()
